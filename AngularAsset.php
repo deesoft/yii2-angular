@@ -20,6 +20,10 @@ class AngularAsset extends \yii\web\AssetBundle
      */
     public $js = [
         'js/angular.min.js',
+        'js/mdm.angular.js'
     ];
-    
+    public $depends = [
+        'yii\web\YiiAsset',
+    ];
+
 }
