@@ -13,13 +13,13 @@ class AngularRouteAsset extends \yii\web\AssetBundle
     /**
      * @inheritdoc
      */
-    public $sourcePath = '@bower/angular-route';
+    public $sourcePath = '@dee/angular/assets';
 
     /**
      * @inheritdoc
      */
     public $js = [
-        'angular-route.js',
+        'js/angular-route.min.js',
     ];
 
     /**

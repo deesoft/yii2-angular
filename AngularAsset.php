@@ -13,13 +13,13 @@ class AngularAsset extends \yii\web\AssetBundle
     /**
      * @inheritdoc
      */
-    public $sourcePath = '@bower/angular';
+    public $sourcePath = '@dee/angular/assets';
 
     /**
      * @inheritdoc
      */
     public $js = [
-        'angular.js',
+        'js/angular.min.js',
     ];
     
 }

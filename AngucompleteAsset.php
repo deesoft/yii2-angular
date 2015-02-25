@@ -8,18 +8,22 @@ namespace dee\angular;
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
-class AngularRouteAsset extends \yii\web\AssetBundle
+class AngucompleteAsset extends \yii\web\AssetBundle
 {
     /**
      * @inheritdoc
      */
-    public $sourcePath = '@bower/angular-route';
+    public $sourcePath = '@dee/angular/assets';
 
     /**
      * @inheritdoc
      */
     public $js = [
-        'angular-route.js',
+        'js/angucomplete.js',
+    ];
+    
+    public $css = [
+        'css/angucomplete.css'
     ];
 
     /**
