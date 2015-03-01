@@ -1,10 +1,11 @@
-angular.module('mdm.angular',[])
-    .directive('onLastRepeat',function(){
+angular.module('mdm.angular', [])
+    .directive('onLastRepeat', function () {
         return {
+            restrict: 'A',
             scope: {
                 cb: '&onLastRepeat',
             },
-            link: function (scope,element) {
+            link: function (scope, element) {
                 if (scope.$parent.$last) {
                     setTimeout(function () {
                         scope.cb(element);
@@ -12,5 +13,5 @@ angular.module('mdm.angular',[])
                 }
             }
         };
-    })
+    });
     
