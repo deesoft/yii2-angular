@@ -26,9 +26,9 @@ class DataSource extends \yii\base\Object
     public $queryParams = [];
 
     /**
-     * @var string 
+     * @var array 
      */
-    public $filterParam = 'q';
+    public $searchOptions = [];
 
     /**
      * @var boolean 
@@ -189,9 +189,16 @@ class DataSource extends \yii\base\Object
      */
     public function defaultSearch($query, $params = [])
     {
+        foreach ($this->searchOptions as $field => $strict) {
+            if(is_int($field)){
+                $field = $strict;
+                $strict = false;
+            }
+            
+        }
         $filters = ArrayHelper::getValue($params, $this->filterParam, []);
-        foreach ($filters as $filter) {
-            $this->defaultFilter($query, $filter);
+        foreach ($filters as $key => $filter) {
+            $this->defaultFilter($query, $filter, $key);
         }
     }
 
@@ -199,9 +206,12 @@ class DataSource extends \yii\base\Object
      * @param QueryInterface $query
      * @param array $filter
      */
-    public function defaultFilter($query, $filter)
+    public function defaultFilter($query, $filter, $key)
     {
-        $field = $filter['field'];
+        if (!is_array($filter)) {
+            $filter = ['field' => $key, 'value' => $filter];
+        }
+        $field = isset($filter['field']) ? $filter['field'] : $key;
         if (isset($this->fieldMap[$field])) {
             $field = $this->fieldMap[$field];
         }

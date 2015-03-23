@@ -1,7 +1,7 @@
 <?php
 /* @var $this yii\web\View */
 ?>
-<form name="form">
+<form name="Form">
     <div class="box box-primary">
         <div class="box box-body">
             <div class="row">

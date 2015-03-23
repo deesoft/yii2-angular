@@ -5,7 +5,6 @@ namespace dee\angular;
 use Yii;
 use yii\filters\ContentNegotiator;
 use yii\web\Response;
-use yii\filters\VerbFilter;
 
 /**
  * Controller
@@ -29,12 +28,12 @@ class Controller extends \yii\web\Controller
     {
         return[
             'resource' => [
-                'class' => ResourceAction::className(),
+                'class' => __NAMESPACE__ . '\ResourceAction',
             ],
             'template' => [
-                'class' => \yii\web\ViewAction::className(),
+                'class' => 'yii\web\ViewAction',
                 'layout' => false,
-                'viewPrefix'=>'',
+                'viewPrefix' => '',
                 'defaultView' => 'list',
             ]
         ];
@@ -55,10 +54,6 @@ class Controller extends \yii\web\Controller
                 ],
                 'except' => $this->exceptNegoitate(),
             ],
-            'verbFilter' => [
-                'class' => VerbFilter::className(),
-                'actions' => $this->verbs(),
-            ],
         ];
     }
 
@@ -72,16 +67,6 @@ class Controller extends \yii\web\Controller
     }
 
     /**
-     * Declares the allowed HTTP verbs.
-     * Please refer to [[VerbFilter::actions]] on how to declare the allowed verbs.
-     * @return array the allowed HTTP verbs.
-     */
-    protected function verbs()
-    {
-        return [];
-    }
-
-    /**
      * Serializes the specified data.
      * The default implementation will create a serializer based on the configuration given by [[serializer]].
      * It then uses the serializer to serialize the given data.
@@ -90,6 +75,9 @@ class Controller extends \yii\web\Controller
      */
     protected function serializeData($data)
     {
+        if (is_array($this->serializer) && !isset($this->serializer['class'])) {
+            $this->serializer['class'] = 'yii\rest\Serializer';
+        }
         return Yii::createObject($this->serializer)->serialize($data);
     }
 

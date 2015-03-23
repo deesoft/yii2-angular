@@ -26,7 +26,21 @@ class AngularBootstrapAsset extends \yii\web\AssetBundle
      * @inheritdoc
      */
     public $depends = [
-        'yii\bootstrap\BootstrapAsset',
-        'dee\angular\AngularAsset',
-    ];    
+        'dee\angular\AngularAsset'
+    ];
+
+    /**
+     * @inheritdoc
+     */
+    public function init()
+    {
+        parent::init();
+        if (class_exists('yii\bootstrap\BootstrapAsset')) {
+            array_push($this->depends, 'yii\bootstrap\BootstrapAsset');
+        } else {
+            $this->css = [
+                'css/bootstrap.min.css'
+            ];
+        }
+    }
 }
