@@ -16,7 +16,7 @@
                     </thead>
                     <tbody>
                         <tr data-key="{{model.id}}" ng-repeat="(no,model) in rows">
-                            <td><a ng-href="#/view/{{model.id}}">{{(pager.currentPage-1)*pager.itemPerPage + no + 1}}</a></td>
+                            <td>{{(pager.currentPage-1)*pager.itemPerPage + no + 1}}</td>
                             <td>{{model.number}}</td>
                             <td>{{model.supplier.name}}</td>
                             <td>{{model.branch.name}}</td>

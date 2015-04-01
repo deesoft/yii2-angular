@@ -69,7 +69,7 @@ class <?= $searchModelClass ?> extends <?= isset($modelAlias) ? $modelAlias : $m
             'query' => $query,
         ]);
 
-        $this->load($params);
+        $this->load($params,'');
         if (!$this->validate()) {
             $query->where('1=0');
             return $dataProvider;

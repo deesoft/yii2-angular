@@ -30,12 +30,6 @@ class Controller extends \yii\web\Controller
             'resource' => [
                 'class' => __NAMESPACE__ . '\ResourceAction',
             ],
-            'template' => [
-                'class' => 'yii\web\ViewAction',
-                'layout' => false,
-                'viewPrefix' => '',
-                'defaultView' => 'list',
-            ]
         ];
     }
 
@@ -52,7 +46,7 @@ class Controller extends \yii\web\Controller
                     'application/json' => Response::FORMAT_JSON,
                     'application/xml' => Response::FORMAT_XML,
                 ],
-                'except' => $this->exceptNegoitate(),
+                'only' => ['resource'],
             ],
         ];
     }
@@ -81,11 +75,8 @@ class Controller extends \yii\web\Controller
         return Yii::createObject($this->serializer)->serialize($data);
     }
 
-    public function exceptNegoitate()
+    public function actionTemplate($view='list')
     {
-        return [
-            'index',
-            'template',
-        ];
+        return $this->renderPartial($view);
     }
 }

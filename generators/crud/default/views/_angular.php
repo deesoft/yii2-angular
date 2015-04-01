@@ -10,7 +10,6 @@ use yii\helpers\Url;
         'ngRoute',
         'ngResource',
         'ui.bootstrap',
-        'mdm.angular',
     ])
         .factory('Resource', ['$resource',
             function ($resource) {
@@ -81,6 +80,18 @@ use yii\helpers\Url;
                 }
 
                 gotoPage();
+
+                $scope.viewModel = function(model){
+
+                }
+
+                $scope.deleteModel = function(model){
+
+                }
+
+                $scope.updateModel = function(model){
+                    
+                }
             }])
         .controller('ViewCtrl', ['$scope', 'Resource', '$routeParams',
             function ($scope, Resource, $routeParams) {
