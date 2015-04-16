@@ -1,0 +1,30 @@
+{
+	"name": "deesoft/yii2-angular",
+	"description": "Yii2 angular extension",
+	"keywords": ["yii2", "angularjs"],
+	"type": "yii2-extension",
+	"license": "BSD-3-Clause",
+	"support": {
+		"issues": "https://github.com/deesoft/yii2-angular/issues",
+		"source": "https://github.com/deesoft/yii2-angular"
+	},
+	"authors": [
+		{
+			"name": "Misbahul Munir",
+			"email": "misbahuldmunir@gmail.com"
+		}
+	],
+	"require": {
+		"yiisoft/yii2": "~2.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"dee\\angular\\": ""
+		}
+	},
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    }
+}
