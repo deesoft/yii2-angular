@@ -74,9 +74,4 @@ class Controller extends \yii\web\Controller
         }
         return Yii::createObject($this->serializer)->serialize($data);
     }
-
-    public function actionTemplate($view='list')
-    {
-        return $this->renderPartial($view);
-    }
 }
