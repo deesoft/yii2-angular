@@ -38,25 +38,19 @@ use dee\angular\Angular;
     'routes'=>[
         '/'=>[
             'view'=>'index',
-            'controller'=>'IndexCtrl',
+            'controller'=>'IndexCtrl', // optional
         ],
         '/view/:id'=>[
-            'view'=>'view',
-            'controller'=>'ViewCtrl',
-            'di'=>[], // like => ['$location','$route'],
+            'view'=>'view', // if controller empty, controller will be as ViewCtrl
+            'di'=>['$location', '$routeParams'], // $scope and $injector is always be added              
         ],
         '/edit/:id'=>[
             'view'=>'edit',
-            'controller'=>'EditCtrl',
-            'di'=>[],
         ],
         '/create'=>[
             'view'=>'create',
-            'controller'=>'CreateCtrl',
-            'di'=>[],
         ],
-    ],
-    'jsFile' => 'script.js' // optional
+    ]
 ])?>
 ```
 Then `index.php`
@@ -70,7 +64,9 @@ use dee\angular\Angular;
 ?>
 
 <ul>
-    <li ng-repeat="item in items"><a ng-href="/view/{{item.id}}">{{item.name}}</a></li>
+    <li ng-repeat="item in items">
+        <a ng-href="/view/{{item.id}}">{{item.name}}</a>
+    </li>
 </ul>
 
 <?php Angular::beginScript() ?>

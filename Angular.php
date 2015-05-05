@@ -5,13 +5,10 @@ namespace dee\angular;
 use Yii;
 use yii\helpers\Html;
 use yii\web\View;
-use yii\helpers\Url;
 use yii\helpers\ArrayHelper;
 use yii\base\InvalidConfigException;
 use yii\helpers\Json;
-use yii\helpers\FileHelper;
 use yii\helpers\Inflector;
-use yii\web\JsExpression;
 
 /**
  * Description of NgView
@@ -79,11 +76,17 @@ class Angular extends \yii\base\Widget
      */
     public static $instance;
 
+    /**
+     * @inheritdoc
+     */
     public function init()
     {
         static::$instance = $this;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function run()
     {
         $routeProvider = [];
@@ -121,11 +124,22 @@ class Angular extends \yii\base\Widget
         static::$instance = null;
     }
 
+    /**
+     * Use to add required module to application
+     *
+     * @param sting|array $requires
+     */
     public static function requires($requires)
     {
         static::$instance->requires = array_unique(array_merge(static::$instance->requires, (array) $requires));
     }
 
+    /**
+     * Render script create module. The result are
+     * ```javascript
+     * appName = angular.module('appName',[requires,...]);
+     * ```
+     */
     protected function renderModule()
     {
         $view = $this->getView();
@@ -141,6 +155,10 @@ class Angular extends \yii\base\Widget
         $view->registerJs($js, View::POS_END);
     }
 
+    /**
+     * Render script config for $routeProvider
+     * @param array $routeProvider
+     */
     protected function renderRouteProvider($routeProvider)
     {
         $view = $this->getView();
@@ -149,6 +167,16 @@ class Angular extends \yii\base\Widget
         $view->registerJs($js, View::POS_END);
     }
 
+    /**
+     * Render script create controllers
+     * ```javascript
+     * appName.controller('CtrlName',['$scope',...,
+     *     function($scope,...){
+     *         ...
+     *     }]);
+     * ```
+     * @param array $controllers
+     */
     protected function renderControllers($controllers)
     {
         $view = $this->getView();
@@ -162,6 +190,14 @@ class Angular extends \yii\base\Widget
         }
     }
 
+    /**
+     * Render script resource
+     * ```javascript
+     * appName.factory(ResName,['$resource',function($resource){
+     *     return ...;
+     * }]);
+     * ```
+     */
     protected function renderResources()
     {
         $view = $this->getView();
@@ -187,6 +223,11 @@ JS;
         }
     }
 
+    /**
+     * Only get script inner of `script` tag.
+     * @param string $js
+     * @return string
+     */
     protected static function parseBlockJs($js)
     {
         $jsBlockPattern = '|^<script[^>]*>(?P<block_content>.+?)</script>$|is';
@@ -196,18 +237,29 @@ JS;
         return $js;
     }
 
+    /**
+     * Register script to controller.
+     * @param string $js
+     * @param integer|string $pos
+     */
     public static function registerJs($js, $pos = null)
     {
         $pos = $pos ? : (static::$instance->controller ? : View::POS_END);
         static::$instance->view->registerJs(static::parseBlockJs($js), $pos);
     }
 
+    /**
+     * Begin script block
+     */
     public static function beginScript()
     {
         ob_start();
         ob_implicit_flush(false);
     }
 
+    /**
+     * End script block
+     */
     public static function endScript()
     {
         $js = ob_get_clean();
