@@ -10,6 +10,8 @@ use yii\helpers\ArrayHelper;
 use yii\base\InvalidConfigException;
 use yii\helpers\Json;
 use yii\helpers\FileHelper;
+use yii\helpers\Inflector;
+use yii\web\JsExpression;
 
 /**
  * Description of NgView
@@ -35,12 +37,6 @@ class Angular extends \yii\base\Widget
      *
      * @var string
      */
-    public $templateParam = 'template';
-
-    /**
-     *
-     * @var string
-     */
     public $defaultPath = '/';
 
     /**
@@ -59,12 +55,6 @@ class Angular extends \yii\base\Widget
      *
      * @var string
      */
-    public $jsFile;
-
-    /**
-     *
-     * @var string
-     */
     public $tag = 'div';
 
     /**
@@ -72,12 +62,6 @@ class Angular extends \yii\base\Widget
      * @var string
      */
     public $controller;
-
-    /**
-     *
-     * @var string
-     */
-    public $statePath = '@runtime/angular';
 
     /**
      * @var array
@@ -102,45 +86,38 @@ class Angular extends \yii\base\Widget
 
     public function run()
     {
-        $template = Yii::$app->request->get($this->templateParam);
-        $params = Yii::$app->controller->actionParams;
-        $params[0] = '/' . Yii::$app->controller->getRoute();
+        $routeProvider = [];
+        $controllers = [];
+        $view = $this->getView();
 
-        if ($template === null) {
-            $routeProvider = [];
-            $controllers = [];
-            foreach ($this->routes as $path => $route) {
-                if (!isset($route['view'], $route['controller'])) {
-                    throw new InvalidConfigException('"view" and "controller" of route must be set.');
-                }
-                $this->controller = $route['controller'];
-                $viewName = ArrayHelper::remove($route, 'view');
-
-                $this->setState($viewName);
-
-                $di = ArrayHelper::remove($route, 'di', []);
-                $controllers[$this->controller] = $di;
-
-                $params[$this->templateParam] = $viewName;
-                $route['templateUrl'] = Url::to($params);
-                $r = Json::encode($route);
-                $routeProvider[] = "\$routeProvider.when('{$path}',$r);";
-                $this->controller = null;
+        foreach ($this->routes as $path => $route) {
+            if (!isset($route['view'])) {
+                throw new InvalidConfigException('"view" of route must be set.');
             }
+            $viewName = ArrayHelper::remove($route, 'view');
 
-            $routeProvider[] = '$routeProvider.otherwise(' . Json::encode(['redirectTo' => $this->defaultPath]) . ');';
+            if (empty($route['controller'])) {
+                $route['controller'] = Inflector::camelize($viewName) . 'Ctrl';
+            }
+            $this->controller = $route['controller'];
+            $route['template'] = $view->render($viewName, ['angular' => $this]);
 
-            $this->renderModule();
-            $this->renderRouteProvider($routeProvider);
-            $this->renderControllers($controllers);
-            $this->renderResources();
-            $this->renderJsFile();
+            $di = ArrayHelper::remove($route, 'di', []);
+            $controllers[$this->controller] = $di;
 
-            echo Html::tag($this->tag, '', ['ng-app' => $this->name, 'ng-view' => true]);
-        } else {
-            Yii::$app->response->content = $this->getState($template);
-            Yii::$app->end();
+            $routeProvider[] = "\$routeProvider.when('{$path}'," . Json::encode($route) . ");";
+            $this->controller = null;
         }
+
+        $routeProvider[] = '$routeProvider.otherwise(' . Json::encode(['redirectTo' => $this->defaultPath]) . ');';
+
+        $this->renderModule();
+        $this->renderRouteProvider($routeProvider);
+        $this->renderControllers($controllers);
+        $this->renderResources();
+
+        echo Html::tag($this->tag, '', ['ng-app' => $this->name, 'ng-view' => true]);
+
         static::$instance = null;
     }
 
@@ -219,17 +196,10 @@ JS;
         return $js;
     }
 
-    protected function renderJsFile()
-    {
-        if ($this->jsFile !== null) {
-            $js = $this->view->render($this->jsFile, ['angular' => $this]);
-            $this->view->registerJs(static::parseBlockJs($js), View::POS_END);
-        }
-    }
-
     public static function registerJs($js, $pos = null)
     {
-        static::$instance->view->registerJs(static::parseBlockJs($js), $pos? : static::$instance->controller);
+        $pos = $pos ? : (static::$instance->controller ? : View::POS_END);
+        static::$instance->view->registerJs(static::parseBlockJs($js), $pos);
     }
 
     public static function beginScript()
@@ -242,30 +212,5 @@ JS;
     {
         $js = ob_get_clean();
         static::registerJs($js);
-    }
-    private $_statePath;
-
-    protected function getStatePath()
-    {
-        if ($this->_statePath === null) {
-            $params = Yii::$app->controller->actionParams;
-            $params[0] = '/' . Yii::$app->controller->getRoute();
-            $path = sprintf('%x', crc32(serialize($params) . __CLASS__ . $this->getId()));
-            $this->_statePath = Yii::getAlias("{$this->statePath}/{$path}");
-            FileHelper::createDirectory($this->_statePath);
-        }
-        return $this->_statePath;
-    }
-
-    protected function setState($template)
-    {
-        $path = $this->getStatePath() . '/' . str_replace(['/', '@'], ['_', ''], $template);
-        file_put_contents($path, $this->view->render($template, ['angular' => $this]));
-    }
-
-    protected function getState($template)
-    {
-        $path = $this->getStatePath() . '/' . str_replace(['/', '@'], ['_', ''], $template);
-        return file_get_contents($path);
     }
 }

@@ -59,7 +59,7 @@ use dee\angular\Angular;
     'jsFile' => 'script.js' // optional
 ])?>
 ```
-Then `index.php
+Then `index.php`
 ```php
 <?php
 
