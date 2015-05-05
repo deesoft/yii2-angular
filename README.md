@@ -42,7 +42,7 @@ use dee\angular\Angular;
         ],
         '/view/:id'=>[
             'view'=>'view', // if controller empty, controller will be as ViewCtrl
-            'di'=>['$location', '$routeParams'], // $scope and $injector is always be added              
+            'di'=>['$location', '$routeParams'], // $scope and $injector are always be added              
         ],
         '/edit/:id'=>[
             'view'=>'edit',

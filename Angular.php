@@ -111,8 +111,9 @@ class Angular extends \yii\base\Widget
             $routeProvider[] = "\$routeProvider.when('{$path}'," . Json::encode($route) . ");";
             $this->controller = null;
         }
-
-        $routeProvider[] = '$routeProvider.otherwise(' . Json::encode(['redirectTo' => $this->defaultPath]) . ');';
+        if(isset($this->routes[$this->defaultPath])){
+            $routeProvider[] = '$routeProvider.otherwise(' . Json::encode(['redirectTo' => $this->defaultPath]) . ');';
+        }
 
         $this->renderModule();
         $this->renderRouteProvider($routeProvider);
