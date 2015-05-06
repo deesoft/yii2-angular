@@ -1,6 +1,8 @@
 <?php
 
 use yii\helpers\Inflector;
+use yii\helpers\Html;
+use yii\web\JsExpression;
 
 /* @var $this yii\web\View */
 /* @var $generator dee\angular\generators\crud\Generator */
@@ -34,7 +36,13 @@ foreach ($generator->getColumnNames() as $column){
     if($count == $maxColumn){
         echo "<!--\n";
     }
-    echo "                    <th>".Inflector::id2camel($column)."</th>\n";
+    $header = Inflector::id2camel($column);
+    echo <<<HEADER
+                    <th><a href="javascript:;" ng-click="provider.sort('$column')"
+                        ng-class="{asc:provider.isAsc('$column'),desc:provider.isDesc('$column')}">
+                        {$header}</a></th>
+
+HEADER;
 }
 if($count >= $maxColumn){
     echo "-->\n";
@@ -45,7 +53,7 @@ if($count >= $maxColumn){
             </thead>
             <tbody>
                 <tr ng-repeat="(no,model) in rows">
-                    <td>{{(pager.currentPage-1)*pager.itemPerPage + no + 1}}</td>
+                    <td>{{(provider.currentPage-1)*provider.itemPerPage + no + 1}}</td>
 <?php
 $count = 0;
 foreach ($generator->getColumnNames() as $column){
@@ -67,9 +75,9 @@ if($count >= $maxColumn){
                 </tr>
             </tbody>
         </table>
-        <pagination total-items="pager.totalItems" ng-model="pager.currentPage"
-                    max-size="pager.maxSize" items-per-page="pager.itemPerPage"
-                    ng-change="query()"
+        <pagination total-items="provider.totalItems" ng-model="provider.currentPage"
+                    max-size="provider.maxSize" items-per-page="provider.itemPerPage"
+                    ng-change="provider.query()"
                     class="pagination-sm" boundary-links="true"></pagination>
     </div>
 </div>

@@ -19,7 +19,7 @@ use dee\angular\Angular;
 ?>
 <?php echo "<?=\n" ?>
 Angular::widget([
-    'requires' => ['ngResource',],
+    'requires' => ['ngResource','ui.bootstrap',],
     'routes' => [
         '/' => [
             'view' => 'index',

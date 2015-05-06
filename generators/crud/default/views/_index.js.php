@@ -14,18 +14,36 @@ $pks = $class::primaryKey();
 $restName = StringHelper::basename($generator->modelClass);
 ?>
 
-// pagination
-$scope.pager = {maxSize: 10};
-$scope.query = function () {
-    $scope.rows = <?= $restName;?>.query({
-        page: $scope.pager.currentPage,
-    }, function (r, headerCallback) {
-        yii.angular.getPagerInfo($scope.pager, headerCallback);
-    });
-}
+// data provider
+configProvider = {
+    multisort: false,
+    sortAttr:{},
+};
+
+$scope.provider = {
+    maxSize: 5,
+    sort: function(attr){
+        yii.angular.setSort(attr,configProvider);
+        $scope.provider.query();
+    },
+    isAsc: function(attr){
+        return configProvider.sortAttr[attr] == true;
+    },
+    isDesc: function(attr){
+        return configProvider.sortAttr[attr] === false;
+    },
+    query: function(){
+        $scope.rows = <?= $restName;?>.query({
+            page: $scope.provider.currentPage,
+            sort: yii.angular.getSort(configProvider),
+        }, function (r, headerCallback) {
+            yii.angular.getPagerInfo($scope.provider, headerCallback);
+        });
+    }
+};
 
 // initial load
-$scope.query();
+$scope.provider.query();
 
 // delete Item
 $scope.deleteModel = function(model){
@@ -36,7 +54,7 @@ $scope.deleteModel = function(model){
     echo "        id = model.{$pks[0]};\n";
 }?>
         <?= $restName;?>.remove({id:id},{},function(){
-            $scope.query();
+            $scope.provider.query();
         });
     }
 }
