@@ -11,10 +11,10 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $angular Angular */
 
-Angular::renderScript('_create.js');
+Angular::renderScript('_update.js');
 ?>
 
-<div class="<?= $generator->controllerID ?>-create">
+<div class="<?= $generator->controllerID ?>-update">
 
     <h1><?= "<?= " ?>Html::encode($this->title) ?></h1>
 

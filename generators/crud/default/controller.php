@@ -3,26 +3,17 @@
  * This is the template for generating a CRUD controller class file.
  */
 
-use yii\db\ActiveRecordInterface;
 use yii\helpers\StringHelper;
 
 
 /* @var $this yii\web\View */
-/* @var $generator yii\gii\generators\crud\Generator */
+/* @var $generator dee\angular\generators\crud\Generator */
 
 $controllerClass = StringHelper::basename($generator->controllerClass);
 $modelClass = StringHelper::basename($generator->modelClass);
-$searchModelClass = StringHelper::basename($generator->searchModelClass);
-if ($modelClass === $searchModelClass) {
-    $searchModelAlias = $searchModelClass . 'Search';
-}
 
-/* @var $class ActiveRecordInterface */
 $class = $generator->modelClass;
 $pks = $class::primaryKey();
-$urlParams = $generator->generateUrlParams();
-$actionParams = $generator->generateActionParams();
-$actionParamComments = $generator->generateActionParamComments();
 
 echo "<?php\n";
 ?>
@@ -30,14 +21,12 @@ echo "<?php\n";
 namespace <?= StringHelper::dirname(ltrim($generator->controllerClass, '\\')) ?>;
 
 use Yii;
+<?php if($generator->alsoAsRest):?>
 use <?= ltrim($generator->modelClass, '\\') ?>;
-<?php if (!empty($generator->searchModelClass)): ?>
-use <?= ltrim($generator->searchModelClass, '\\') . (isset($searchModelAlias) ? " as $searchModelAlias" : "") ?>;
-<?php else: ?>
 use yii\data\ActiveDataProvider;
-<?php endif; ?>
 use <?= ltrim($generator->baseControllerClass, '\\') ?>;
 use yii\web\NotFoundHttpException;
+<?php endif;?>
 
 /**
  * <?= $controllerClass ?> implements the CRUD actions for <?= $modelClass ?> model.
@@ -50,7 +39,20 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        return $this->render('main');
+    }
+<?php if($generator->alsoAsRest):?>
+    
+    /**
+     * @inheritdoc
+     */
+    public function actions()
+    {
+        return [
+            'resource' => [
+                'class' => 'dee\angular\RestAction',
+            ]
+        ];
     }
 
     /**
@@ -59,16 +61,12 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
      */
     public function query()
     {
-<?php if (!empty($generator->searchModelClass)): ?>
-        $searchModel = new <?= isset($searchModelAlias) ? $searchModelAlias : $searchModelClass ?>();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-<?php else: ?>
+        $query = <?= $modelClass ?>::find();
         $dataProvider = new ActiveDataProvider([
-            'query' => <?= $modelClass ?>::find(),
+            'query' => $query,
         ]);
-        
+
         return $dataProvider;
-<?php endif; ?>
     }
 
     /**
@@ -144,19 +142,22 @@ class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->bas
      */
     protected function findModel($id)
     {
+<?php if(count($pks) > 1): ?>
         $keys = <?= $modelClass ?>::primaryKey();
-        if (count($keys) > 1) {
-            $values = explode(',', $id);
-            if (count($keys) === count($values)) {
-                $model = <?= $modelClass ?>::findOne(array_combine($keys, $values));
-            }
-        } else {
-            $model = <?= $modelClass ?>::findOne($id);
+        $values = explode(',', $id);
+        if (count($keys) === count($values)) {
+            $model = <?= $modelClass ?>::findOne(array_combine($keys, $values));
+        }else{
+            $model = null;
         }
         if ($model !== null) {
+<?php else: ?>
+        if (($model = <?= $modelClass ?>::findOne($id)) !== null) {
+<?php endif;?>
             return $model;
         } else {
             throw new NotFoundHttpException('The requested page does not exist.');
         }
     }
+<?php endif;?>
 }

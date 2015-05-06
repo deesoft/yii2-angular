@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @link http://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
@@ -23,16 +22,16 @@ use yii\db\BaseActiveRecord;
  */
 class Generator extends \yii\gii\generators\crud\Generator
 {
-    public $baseControllerClass = 'dee\angular\Controller';
     public $controllerID;
     public $moduleID;
+    public $alsoAsRest = true;
 
     /**
      * @inheritdoc
      */
     public function getName()
     {
-        return 'MDM CRUD Generator';
+        return 'Angular CRUD Generator';
     }
 
     /**
@@ -50,20 +49,18 @@ class Generator extends \yii\gii\generators\crud\Generator
     public function rules()
     {
         return array_merge(\yii\gii\Generator::rules(), [
-            [['moduleID', 'controllerID', 'modelClass', 'searchModelClass', 'baseControllerClass'], 'filter', 'filter' => 'trim'],
+            [['moduleID', 'controllerID', 'modelClass', 'baseControllerClass'], 'filter', 'filter' => 'trim'],
             [['modelClass', 'controllerID', 'baseControllerClass', 'indexWidgetType'], 'required'],
-            [['searchModelClass'], 'compare', 'compareAttribute' => 'modelClass', 'operator' => '!==', 'message' => 'Search Model Class must not be equal to Model Class.'],
-            [['modelClass', 'baseControllerClass', 'searchModelClass'], 'match', 'pattern' => '/^[\w\\\\]*$/', 'message' => 'Only word characters and backslashes are allowed.'],
+            [['modelClass', 'baseControllerClass'], 'match', 'pattern' => '/^[\w\\\\]*$/', 'message' => 'Only word characters and backslashes are allowed.'],
             [['modelClass'], 'validateClass', 'params' => ['extends' => BaseActiveRecord::className()]],
             [['baseControllerClass'], 'validateClass', 'params' => ['extends' => Controller::className()]],
             [['controllerID'], 'match', 'pattern' => '/^[a-z][a-z0-9\\-\\/]*$/', 'message' => 'Only a-z, 0-9, dashes (-) and slashes (/) are allowed.'],
-            [['searchModelClass'], 'validateNewClass'],
-            [['controllerClass'],'filter','filter'=>function(){
+            [['controllerClass'], 'filter', 'filter' => function() {
                 return $this->getControllerClass();
             }, 'skipOnEmpty' => false],
             [['modelClass'], 'validateModelClass'],
             [['moduleID'], 'validateModuleID'],
-            [['enableI18N'], 'boolean'],
+            [['enableI18N', 'alsoAsRest'], 'boolean'],
             [['messageCategory'], 'validateMessageCategory', 'skipOnEmpty' => false],
         ]);
     }
@@ -91,6 +88,7 @@ class Generator extends \yii\gii\generators\crud\Generator
                     <li><code>order-item</code> generates <code>OrderItemController.php</code></li>
                     <li><code>admin/user</code> generates <code>UserController.php</code> under <code>admin</code> directory.</li>
                 </ul>',
+            'alsoAsRest' => 'When <code>true</code> then controller is also generated as REST',
         ]);
     }
 
@@ -106,7 +104,7 @@ class Generator extends \yii\gii\generators\crud\Generator
             }
         }
     }
-    
+
     /**
      * @inheritdoc
      */
@@ -118,25 +116,18 @@ class Generator extends \yii\gii\generators\crud\Generator
             new CodeFile($controllerFile, $this->render('controller.php')),
         ];
 
-        if (!empty($this->searchModelClass)) {
-            $searchModel = Yii::getAlias('@' . str_replace('\\', '/', ltrim($this->searchModelClass, '\\') . '.php'));
-            $files[] = new CodeFile($searchModel, $this->render('search.php'));
-        }
-
         $viewPath = $this->getViewPath();
         $templatePath = $this->getTemplatePath() . '/views';
         foreach (scandir($templatePath) as $file) {
-            if (empty($this->searchModelClass) && $file === '_search.php') {
-                continue;
-            }
             if (is_file($templatePath . '/' . $file) && pathinfo($file, PATHINFO_EXTENSION) === 'php') {
-                $files[] = new CodeFile("$viewPath/$file", $this->render("views/$file"));
+                $generatedFile = substr($file, -7) == '.js.php' ? substr($file, 0, -4) : $file;
+                $files[] = new CodeFile("$viewPath/$generatedFile", $this->render("views/$file"));
             }
         }
 
         return $files;
     }
-    
+
     /**
      * @return string the action view file path
      */
@@ -144,7 +135,7 @@ class Generator extends \yii\gii\generators\crud\Generator
     {
         $module = empty($this->moduleID) ? Yii::$app : Yii::$app->getModule($this->moduleID);
 
-        return $module->getViewPath() . '/' . $this->controllerID ;
+        return $module->getViewPath() . '/' . $this->controllerID;
     }
 
     /**
@@ -181,5 +172,13 @@ class Generator extends \yii\gii\generators\crud\Generator
         $className = ltrim($module->controllerNamespace . '\\' . str_replace('/', '\\', $prefix) . $className, '\\');
 
         return $className;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function stickyAttributes()
+    {
+        return array_merge(parent::stickyAttributes(), ['alsoAsRest']);
     }
 }

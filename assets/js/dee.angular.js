@@ -1,4 +1,4 @@
-angular.module('mdm.angular', [])
+angular.module('dee.angular', [])
     .directive('onLastRepeat', function () {
         return {
             restrict: 'A',
@@ -14,4 +14,3 @@ angular.module('mdm.angular', [])
             }
         };
     });
-    

@@ -79,4 +79,24 @@ $scope.deleteItem = function (id) {
 }
 <?php Angular::endScript(); ?>
 
-``
+```
+
+Use GII to generate crud
+------------------------
+```php
+...
+if (!YII_ENV_TEST) {
+//     configuration adjustments for 'dev' environment
+    $config['bootstrap'][] = 'debug';
+    $config['modules']['debug'] = 'yii\debug\Module';
+
+    $config['bootstrap'][] = 'gii';
+    $config['modules']['gii'] = [
+        'class' => 'yii\gii\Module',
+        'generators' => [
+            'angular' => ['class' => 'dee\angular\generators\crud\Generator'],
+        ]
+    ];
+}
+
+```

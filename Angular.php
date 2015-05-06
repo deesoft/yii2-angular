@@ -111,7 +111,7 @@ class Angular extends \yii\base\Widget
             $routeProvider[] = "\$routeProvider.when('{$path}'," . Json::encode($route) . ");";
             $this->controller = null;
         }
-        if(isset($this->routes[$this->defaultPath])){
+        if (isset($this->routes[$this->defaultPath])) {
             $routeProvider[] = '$routeProvider.otherwise(' . Json::encode(['redirectTo' => $this->defaultPath]) . ');';
         }
 
@@ -240,6 +240,21 @@ JS;
 
     /**
      * Register script to controller.
+     * 
+     * @param string $viewFile
+     * @param array $params
+     * @param integer|string $pos
+     */
+    public static function renderScript($viewFile, $params = [], $pos = null)
+    {
+        $params['angular'] = static::$instance;
+        $js = static::$instance->view->render($viewFile, $params);
+        static::registerJs($js, $pos);
+    }
+
+    /**
+     * Register script to controller.
+     *
      * @param string $js
      * @param integer|string $pos
      */
