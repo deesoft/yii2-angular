@@ -20,7 +20,9 @@ $scope.model = <?= $restName;?>.get({id:$scope.paramId});
 
 // delete Item
 $scope.deleteModel = function(){
-    <?= $restName;?>.remove({id:$scope.paramId},{},function(){
-        $location.path('/');
-    });
+    if(confirm('Are you sure you want to delete')){
+        <?= $restName;?>.remove({id:$scope.paramId},{},function(){
+            $location.path('/');
+        });
+    }
 }

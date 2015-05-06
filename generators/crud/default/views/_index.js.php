@@ -35,7 +35,8 @@ $scope.deleteModel = function(model){
 }else{
     echo "        id = model.{$pks[0]};\n";
 }?>
-        <?= $restName;?>.remove({id:id});
-        $scope.query();
+        <?= $restName;?>.remove({id:id},{},function(){
+            $scope.query();
+        });
     }
 }
