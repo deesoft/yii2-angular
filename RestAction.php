@@ -64,9 +64,10 @@ class RestAction extends \yii\base\Action
         $patterns = array_merge($this->patterns, $this->extraPatterns);
         foreach ($patterns as $pattern => $action) {
             $rule = $this->createRule($pattern, $action);
-            $this->_rules[10 * count($rule['params']) + count($rule['verbs'])] = $rule;
+            $rule['_sort'] = 10 * count($rule['params']) + count($rule['verbs']);
+            $this->_rules[] = $rule;
         }
-        krsort($this->_rules);
+        ArrayHelper::multisort($this->_rules, '_sort', SORT_DESC);
     }
 
     /**

@@ -34,6 +34,11 @@ use yii\web\NotFoundHttpException;
 class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->baseControllerClass) . "\n" ?>
 {
     /**
+     * @inheritdoc
+     */
+    public $enableCsrfValidation = false;
+    
+    /**
      * Display main page.
      * @return mixed
      */
