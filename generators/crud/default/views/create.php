@@ -11,7 +11,7 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $angular Angular */
 
-Angular::renderScript('_create.js');
+Angular::renderScript('js/create.js');
 ?>
 
 <div class="<?= $generator->controllerID ?>-create">

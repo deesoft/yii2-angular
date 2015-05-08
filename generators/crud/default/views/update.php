@@ -11,7 +11,7 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $angular Angular */
 
-Angular::renderScript('_update.js');
+Angular::renderScript('js/update.js');
 ?>
 
 <div class="<?= $generator->controllerID ?>-update">

@@ -15,29 +15,16 @@ $restName = StringHelper::basename($generator->modelClass);
 ?>
 
 // data provider
-configProvider = {
-    multisort: false,
-    sortAttr:{},
-};
-
 $scope.provider = {
+    multisort: false,
     maxSize: 5,
-    sort: function(attr){
-        yii.angular.setSort(attr,configProvider);
-        $scope.provider.query();
-    },
-    isAsc: function(attr){
-        return configProvider.sortAttr[attr] == true;
-    },
-    isDesc: function(attr){
-        return configProvider.sortAttr[attr] === false;
-    },
     query: function(){
-        $scope.rows = <?= $restName;?>.query({
+        <?= $restName;?>.query({
             page: $scope.provider.currentPage,
-            sort: yii.angular.getSort(configProvider),
-        }, function (r, headerCallback) {
+            sort: $scope.provider.sort,
+        }, function (rows, headerCallback) {
             yii.angular.getPagerInfo($scope.provider, headerCallback);
+            $scope.rows = rows;
         });
     }
 };

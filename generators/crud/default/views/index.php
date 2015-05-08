@@ -1,11 +1,13 @@
 <?php
 
 use yii\helpers\Inflector;
-use yii\helpers\Html;
-use yii\web\JsExpression;
 
 /* @var $this yii\web\View */
 /* @var $generator dee\angular\generators\crud\Generator */
+
+$class = $generator->modelClass;
+$pks = $class::primaryKey();
+$rowKey = count($pks) > 1 ? "[model.".  implode(', model.', $pks)."].join()" : "model.{$pks[0]}";
 
 $maxColumn = 6;
 echo "<?php\n";
@@ -16,7 +18,8 @@ use yii\helpers\Html;
 /* @var $this yii\web\View */
 /* @var $angular Angular */
 
-Angular::renderScript('_index.js');
+Angular::renderScript('js/index.js');
+Angular::requires(['dee.angular']);
 ?>
 
 <div class="<?= $generator->controllerID ?>-index">
@@ -37,12 +40,7 @@ foreach ($generator->getColumnNames() as $column){
         echo "<!--\n";
     }
     $header = Inflector::id2camel($column);
-    echo <<<HEADER
-                    <th><a href="javascript:;" ng-click="provider.sort('$column')"
-                        ng-class="{asc:provider.isAsc('$column'),desc:provider.isDesc('$column')}">
-                        {$header}</a></th>
-
-HEADER;
+    echo "                    <th><a href=\"javascript:;\" sort-provider=\"provider\" sort-field=\"$column\">{$header}</a></th>\n";
 }
 if($count >= $maxColumn){
     echo "-->\n";
@@ -68,8 +66,8 @@ if($count >= $maxColumn){
 }
 ?>
                     <td>
-                        <a ng-href="#/view/{{model.id}}"><span class="glyphicon glyphicon-eye-open"></span></a>
-                        <a ng-href="#/update/{{model.id}}"><span class="glyphicon glyphicon-pencil"></span></a>
+                        <a ng-href="#/view/{{<?= $rowKey?>}}"><span class="glyphicon glyphicon-eye-open"></span></a>
+                        <a ng-href="#/update/{{<?= $rowKey?>}}"><span class="glyphicon glyphicon-pencil"></span></a>
                         <a href="javascript:;" ng-click="deleteModel(model)"><span class="glyphicon glyphicon-trash"></span></a>
                     </td>
                 </tr>

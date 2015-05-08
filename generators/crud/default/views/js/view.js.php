@@ -16,7 +16,9 @@ $routeParams = $injector.get('$routeParams');
 
 $scope.paramId = $routeParams.id;
 // model
-$scope.model = <?= $restName;?>.get({id:$scope.paramId});
+<?= $restName;?>.get({id:$scope.paramId},function(row){
+    $scope.model = row;
+});
 
 // delete Item
 $scope.deleteModel = function(){
