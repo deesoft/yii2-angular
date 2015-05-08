@@ -4,11 +4,16 @@
  */
 
 use yii\helpers\StringHelper;
+use yii\helpers\Url;
 
 /* @var $this yii\web\View */
 /* @var $generator dee\angular\generators\crud\Generator */
 
 $restName = StringHelper::basename($generator->modelClass);
+$resourceUrl = '/' . $generator->controllerID . '/resource';
+if (!empty($generator->moduleID)) {
+    $resourceUrl = '/' . $generator->moduleID . $resourceUrl;
+}
 
 echo "<?php\n";
 ?>
@@ -40,7 +45,7 @@ Angular::widget([
     ],
     'resources' => [
         '<?= $restName;?>' => [
-            'url' => Url::to('resource'),
+            'url' => '<?=Url::to($resourceUrl)?>',
             'actions' =>[
                 'update' => [
                     'method' => 'PUT',

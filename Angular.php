@@ -4,7 +4,6 @@ namespace dee\angular;
 
 use Yii;
 use yii\helpers\Html;
-use yii\web\View;
 use yii\helpers\ArrayHelper;
 use yii\base\InvalidConfigException;
 use yii\helpers\Json;
