@@ -1,10 +1,10 @@
 (function () {
     dee = angular.module('dee.angular', []);
-    dee.directive('onLastRepeat', function () {
+    dee.directive('dLastRepeat', function () {
         return {
             restrict: 'A',
             scope: {
-                cb: '&onLastRepeat',
+                cb: '&dLastRepeat',
             },
             link: function (scope, element) {
                 if (scope.$parent.$last) {
@@ -16,11 +16,11 @@
         };
     });
 
-    dee.directive('sortProvider', function () {
+    dee.directive('dSortProvider', function () {
         return {
             restrict: 'A',
             scope: {
-                provider: '=sortProvider',
+                provider: '=dSortProvider',
                 cb: '&sortQuery',
             },
             link: function (scope, element, attrs) {
@@ -71,6 +71,29 @@
                         }
                     });
                 }
+            }
+        };
+    });
+
+    dee.directive('dErrors', function () {
+        return {
+            restrict: 'A',
+            scope: {
+                errors: '=dErrors',
+            },
+            link: function (scope, element) {
+                element
+                    .off('keypress.validation', ':input[ng-model]')
+                    .on('keypress.validation', ':input[ng-model]', function () {
+                        if (scope.errors.status) {
+                            delete scope.errors.status;
+                            delete scope.errors.text;
+                        }
+                        var attr = $(this).attr('ng-model').substring(6);
+                        if (scope.errors.data[attr]) {
+                            delete scope.errors.data[attr];
+                        }
+                    });
             }
         };
     });

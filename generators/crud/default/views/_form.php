@@ -22,7 +22,14 @@ use dee\angular\Angular;
 ?>
 
 <div class="<?= $generator->controllerID ?>-form">
-    <form name="Form">
+    <form name="Form" d-errors="errors">
+        <div ng-if="errors.status">
+            <h1>Error {{errors.status}}: {{errors.text}}</h1>
+            <ul>
+                <li ng-repeat="(field,msg) in errors.data">{{field}}: {{msg}}</li>
+            </ul>
+        </div>
+
 <?php foreach ($generator->getColumnNames() as $attribute){
     if (in_array($attribute, $safeAttributes)) {
         $containerCls = 'form-group'.($model->isAttributeRequired($attribute)?' required':'');

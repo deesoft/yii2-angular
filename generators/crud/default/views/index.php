@@ -40,7 +40,7 @@ foreach ($generator->getColumnNames() as $column){
         echo "<!--\n";
     }
     $header = Inflector::id2camel($column);
-    echo "                    <th><a href=\"javascript:;\" sort-provider=\"provider\" sort-field=\"$column\">{$header}</a></th>\n";
+    echo "                    <th><a href=\"javascript:;\" d-sort-provider=\"provider\" sort-field=\"$column\">{$header}</a></th>\n";
 }
 if($count >= $maxColumn){
     echo "-->\n";
@@ -74,7 +74,7 @@ if($count >= $maxColumn){
             </tbody>
         </table>
         <pagination total-items="provider.totalItems" ng-model="provider.currentPage"
-                    max-size="provider.maxSize" items-per-page="provider.itemPerPage"
+                    max-size="5" items-per-page="provider.itemPerPage"
                     ng-change="provider.query()"
                     class="pagination-sm" boundary-links="true"></pagination>
     </div>

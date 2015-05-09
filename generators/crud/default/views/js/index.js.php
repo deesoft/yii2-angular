@@ -17,7 +17,6 @@ $restName = StringHelper::basename($generator->modelClass);
 // data provider
 $scope.provider = {
     multisort: false,
-    maxSize: 5,
     query: function(){
         <?= $restName;?>.query({
             page: $scope.provider.currentPage,
