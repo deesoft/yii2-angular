@@ -83,6 +83,7 @@ $scope.deleteItem = function (id) {
 
 Use GII to generate crud
 ------------------------
+Install [deesoft/yii2-gii](https://github.com/deesoft/yii2-gii) then add config
 ```php
 ...
 if (!YII_ENV_TEST) {
@@ -94,7 +95,7 @@ if (!YII_ENV_TEST) {
     $config['modules']['gii'] = [
         'class' => 'yii\gii\Module',
         'generators' => [
-            'angular' => ['class' => 'dee\angular\generators\crud\Generator'],
+            'angular' => ['class' => 'dee\gii\generators\angular\Generator'],
         ]
     ];
 }
