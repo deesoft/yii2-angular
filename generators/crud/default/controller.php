@@ -9,7 +9,7 @@ use yii\helpers\StringHelper;
 /* @var $this yii\web\View */
 /* @var $generator dee\angular\generators\crud\Generator */
 
-$controllerClass = StringHelper::basename($generator->controllerClass);
+$controllerClass = StringHelper::basename($generator->getControllerClass());
 $modelClass = StringHelper::basename($generator->modelClass);
 
 $class = $generator->modelClass;
@@ -18,13 +18,13 @@ $pks = $class::primaryKey();
 echo "<?php\n";
 ?>
 
-namespace <?= StringHelper::dirname(ltrim($generator->controllerClass, '\\')) ?>;
+namespace <?= StringHelper::dirname(ltrim($generator->getControllerClass(), '\\')) ?>;
 
 use Yii;
+use <?= ltrim($generator->baseControllerClass, '\\') ?>;
 <?php if($generator->alsoAsRest):?>
 use <?= ltrim($generator->modelClass, '\\') ?>;
 use yii\data\ActiveDataProvider;
-use <?= ltrim($generator->baseControllerClass, '\\') ?>;
 use yii\web\NotFoundHttpException;
 <?php endif;?>
 
@@ -33,10 +33,12 @@ use yii\web\NotFoundHttpException;
  */
 class <?= $controllerClass ?> extends <?= StringHelper::basename($generator->baseControllerClass) . "\n" ?>
 {
+<?php if($generator->alsoAsRest):?>
     /**
      * @inheritdoc
      */
     public $enableCsrfValidation = false;
+<?php endif;?>
     
     /**
      * Display main page.

@@ -23,8 +23,8 @@ use yii\db\BaseActiveRecord;
 class Generator extends \yii\gii\generators\crud\Generator
 {
     public $controllerID;
-    public $moduleID;
     public $alsoAsRest = true;
+    public $module;
 
     /**
      * @inheritdoc
@@ -49,17 +49,13 @@ class Generator extends \yii\gii\generators\crud\Generator
     public function rules()
     {
         return array_merge(\yii\gii\Generator::rules(), [
-            [['moduleID', 'controllerID', 'modelClass', 'baseControllerClass'], 'filter', 'filter' => 'trim'],
+            [['controllerID', 'modelClass', 'baseControllerClass'], 'filter', 'filter' => 'trim'],
             [['modelClass', 'controllerID', 'baseControllerClass', 'indexWidgetType'], 'required'],
             [['modelClass', 'baseControllerClass'], 'match', 'pattern' => '/^[\w\\\\]*$/', 'message' => 'Only word characters and backslashes are allowed.'],
             [['modelClass'], 'validateClass', 'params' => ['extends' => BaseActiveRecord::className()]],
             [['baseControllerClass'], 'validateClass', 'params' => ['extends' => Controller::className()]],
             [['controllerID'], 'match', 'pattern' => '/^[a-z][a-z0-9\\-\\/]*$/', 'message' => 'Only a-z, 0-9, dashes (-) and slashes (/) are allowed.'],
-            [['controllerClass'], 'filter', 'filter' => function() {
-                return $this->getControllerClass();
-            }, 'skipOnEmpty' => false],
             [['modelClass'], 'validateModelClass'],
-            [['moduleID'], 'validateModuleID'],
             [['enableI18N', 'alsoAsRest'], 'boolean'],
             [['messageCategory'], 'validateMessageCategory', 'skipOnEmpty' => false],
         ]);
@@ -72,7 +68,6 @@ class Generator extends \yii\gii\generators\crud\Generator
     {
         return array_merge(parent::attributeLabels(), [
             'controllerID' => 'Controller ID',
-            'moduleID' => 'Module ID',
         ]);
     }
 
@@ -90,19 +85,6 @@ class Generator extends \yii\gii\generators\crud\Generator
                 </ul>',
             'alsoAsRest' => 'When <code>true</code> then controller is also generated as REST',
         ]);
-    }
-
-    /**
-     * Checks if model ID is valid
-     */
-    public function validateModuleID()
-    {
-        if (!empty($this->moduleID)) {
-            $module = Yii::$app->getModule($this->moduleID);
-            if ($module === null) {
-                $this->addError('moduleID', "Module '{$this->moduleID}' does not exist.");
-            }
-        }
     }
 
     /**
@@ -139,9 +121,21 @@ class Generator extends \yii\gii\generators\crud\Generator
      */
     public function getViewPath()
     {
-        $module = empty($this->moduleID) ? Yii::$app : Yii::$app->getModule($this->moduleID);
-
-        return $module->getViewPath() . '/' . $this->controllerID;
+        if ($this->viewPath === null) {
+            $this->module = Yii::$app;
+            $id = $this->controllerID;
+            while (($pos = strpos($id, '/')) !== false) {
+                $mId = substr($id, 0, $pos);
+                if (($m = $this->module->getModule($mId)) !== null) {
+                    $this->module = $m;
+                    $id = substr($id, $pos + 1);
+                } else {
+                    break;
+                }
+            }
+            $this->viewPath = $this->module->getViewPath() . '/' . $id;
+        }
+        return $this->viewPath;
     }
 
     /**
@@ -150,9 +144,6 @@ class Generator extends \yii\gii\generators\crud\Generator
     public function successMessage()
     {
         $route = '/' . $this->controllerID . '/index';
-        if (!empty($this->moduleID)) {
-            $route = '/' . $this->moduleID . $route;
-        }
         $link = \yii\helpers\Html::a('try it now', [$route], ['target' => '_blank']);
 
         return "The controller has been generated successfully. You may $link.";
@@ -163,21 +154,34 @@ class Generator extends \yii\gii\generators\crud\Generator
      */
     public function getControllerClass()
     {
-        $module = empty($this->moduleID) ? Yii::$app : Yii::$app->getModule($this->moduleID);
-        $id = $this->controllerID;
-        $pos = strrpos($id, '/');
-        if ($pos === false) {
-            $prefix = '';
-            $className = $id;
-        } else {
-            $prefix = substr($id, 0, $pos + 1);
-            $className = substr($id, $pos + 1);
+        if ($this->controllerClass === null) {
+            $this->module = Yii::$app;
+            $id = $this->controllerID;
+            while (($pos = strpos($id, '/')) !== false) {
+                $mId = substr($id, 0, $pos);
+                if (($m = $this->module->getModule($mId)) !== null) {
+                    $this->module = $m;
+                    $id = substr($id, $pos + 1);
+                } else {
+                    break;
+                }
+            }
+            $this->viewPath = $this->module->getViewPath() . '/' . $id;
+
+            $pos = strrpos($id, '/');
+            if ($pos === false) {
+                $prefix = '';
+                $className = $id;
+            } else {
+                $prefix = substr($id, 0, $pos + 1);
+                $className = substr($id, $pos + 1);
+            }
+
+            $className = str_replace(' ', '', ucwords(str_replace('-', ' ', $className))) . 'Controller';
+            $className = ltrim($this->module->controllerNamespace . '\\' . str_replace('/', '\\', $prefix) . $className, '\\');
+            $this->controllerClass = $className;
         }
-
-        $className = str_replace(' ', '', ucwords(str_replace('-', ' ', $className))) . 'Controller';
-        $className = ltrim($module->controllerNamespace . '\\' . str_replace('/', '\\', $prefix) . $className, '\\');
-
-        return $className;
+        return $this->controllerClass;
     }
 
     /**
