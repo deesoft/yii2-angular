@@ -107,11 +107,11 @@ class Angular extends \yii\base\Widget
             $di = ArrayHelper::remove($route, 'di', []);
             $controllers[$this->controller] = $di;
 
-            $routeProvider[] = "\$routeProvider.when('{$path}'," . Json::encode($route) . ");";
+            $routeProvider[] = "\$routeProvider.when('{$path}'," . Json::htmlEncode($route) . ");";
             $this->controller = null;
         }
         if (isset($this->routes[$this->defaultPath])) {
-            $routeProvider[] = '$routeProvider.otherwise(' . Json::encode(['redirectTo' => $this->defaultPath]) . ');';
+            $routeProvider[] = '$routeProvider.otherwise(' . Json::htmlEncode(['redirectTo' => $this->defaultPath]) . ');';
         }
 
         $this->renderModule();
@@ -151,7 +151,7 @@ class Angular extends \yii\base\Widget
                 $class::register($view);
             }
         }
-        $js = "{$this->name} = angular.module('{$this->name}'," . Json::encode($requires) . ");";
+        $js = "{$this->name} = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");";
         $view->registerJs($js, View::POS_END);
     }
 
@@ -202,16 +202,16 @@ class Angular extends \yii\base\Widget
     {
         $view = $this->getView();
         foreach ($this->resources as $name => $config) {
-            $url = Json::encode($config['url']);
+            $url = Json::htmlEncode($config['url']);
             if (empty($config['paramDefaults'])) {
                 $paramDefaults = '{}';
             } else {
-                $paramDefaults = Json::encode($config['paramDefaults']);
+                $paramDefaults = Json::htmlEncode($config['paramDefaults']);
             }
             if (empty($config['actions'])) {
                 $actions = '{}';
             } else {
-                $actions = Json::encode($config['actions']);
+                $actions = Json::htmlEncode($config['actions']);
             }
 
             $js = <<<JS

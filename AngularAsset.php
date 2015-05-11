@@ -19,12 +19,11 @@ class AngularAsset extends \yii\web\AssetBundle
      * @inheritdoc
      */
     public $js = [
+        'js/yii.angular.js',
         'js/angular.min.js',
         'js/angular-route.min.js',
         'js/angular-resource.min.js',
-        'js/dee.basic.js',
         'js/dee.angular.js',
-        'js/yii.angular.js',
     ];
     public $depends = [
         'yii\web\YiiAsset',
