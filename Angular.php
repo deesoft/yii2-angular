@@ -57,6 +57,12 @@ class Angular extends \yii\base\Widget
      *
      * @var string
      */
+    public $jsFile;
+
+    /**
+     *
+     * @var string
+     */
     public $controller;
 
     /**
@@ -129,9 +135,9 @@ class Angular extends \yii\base\Widget
      *
      * @param sting|array $requires
      */
-    public static function requires($requires)
+    public function requires($requires)
     {
-        static::$instance->requires = array_unique(array_merge(static::$instance->requires, (array) $requires));
+        $this->requires = array_unique(array_merge($this->requires, (array) $requires));
     }
 
     /**
@@ -153,6 +159,9 @@ class Angular extends \yii\base\Widget
         }
         $js = "{$this->name} = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");";
         $view->registerJs($js, View::POS_END);
+        if($this->jsFile !== null){
+            $this->renderJs($this->jsFile);
+        }
     }
 
     /**
@@ -228,7 +237,7 @@ JS;
      * @param string $js
      * @return string
      */
-    protected static function parseBlockJs($js)
+    public static function parseBlockJs($js)
     {
         $jsBlockPattern = '|^<script[^>]*>(?P<block_content>.+?)</script>$|is';
         if (preg_match($jsBlockPattern, trim($js), $matches)) {
@@ -244,11 +253,11 @@ JS;
      * @param array $params
      * @param integer|string $pos
      */
-    public static function renderScript($viewFile, $params = [], $pos = null)
+    public function renderJs($viewFile, $params = [], $pos = null)
     {
-        $params['angular'] = static::$instance;
-        $js = static::$instance->view->render($viewFile, $params);
-        static::registerJs($js, $pos);
+        $params['angular'] = $this;
+        $js = $this->view->render($viewFile, $params);
+        $this->registerJs($js, $pos);
     }
 
     /**
@@ -257,16 +266,16 @@ JS;
      * @param string $js
      * @param integer|string $pos
      */
-    public static function registerJs($js, $pos = null)
+    public function registerJs($js, $pos = null)
     {
-        $pos = $pos ? : (static::$instance->controller ? : View::POS_END);
-        static::$instance->view->registerJs(static::parseBlockJs($js), $pos);
+        $pos = $pos ? : ($this->controller ? : View::POS_END);
+        $this->view->registerJs(static::parseBlockJs($js), $pos);
     }
 
     /**
      * Begin script block
      */
-    public static function beginScript()
+    public function beginJs()
     {
         ob_start();
         ob_implicit_flush(false);
@@ -275,9 +284,9 @@ JS;
     /**
      * End script block
      */
-    public static function endScript()
+    public function endJs()
     {
         $js = ob_get_clean();
-        static::registerJs($js);
+        $this->registerJs($js);
     }
 }
