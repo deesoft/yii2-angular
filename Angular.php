@@ -12,6 +12,7 @@ use yii\helpers\Inflector;
 /**
  * Description of NgView
  *
+ * 
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
@@ -42,13 +43,16 @@ class Angular extends \yii\base\Widget
     public $name = 'dApp';
 
     /**
-     *
+     * @var boolean If `true` will render attribute `ng-app="appName"` in widget.
+     */
+    public $useNgApp = true;
+
+    /**
      * @var array
      */
     public $requires = [];
 
     /**
-     *
      * @var string
      */
     public $tag = 'div';
@@ -74,6 +78,7 @@ class Angular extends \yii\base\Widget
         'validation' => 'dee\angular\AngularValidation',
         'validation.rule' => 'dee\angular\AngularValidation',
     ];
+    private $_varName;
 
     /**
      *
@@ -87,6 +92,7 @@ class Angular extends \yii\base\Widget
     public function init()
     {
         static::$instance = $this;
+        $this->_varName = Inflector::variablize($this->name);
     }
 
     /**
@@ -125,7 +131,7 @@ class Angular extends \yii\base\Widget
         $this->renderControllers($controllers);
         $this->renderResources();
 
-        echo Html::tag($this->tag, '', ['ng-app' => $this->name, 'ng-view' => true]);
+        echo Html::tag($this->tag, '', ['ng-app' => $this->useNgApp ? $this->name : false, 'ng-view' => $this->tag != 'ng-view']);
 
         static::$instance = null;
     }
@@ -157,9 +163,9 @@ class Angular extends \yii\base\Widget
                 $class::register($view);
             }
         }
-        $js = "{$this->name} = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");";
+        $js = "{$this->_varName} = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");";
         $view->registerJs($js, View::POS_END);
-        if($this->jsFile !== null){
+        if ($this->jsFile !== null) {
             $this->renderJs($this->jsFile);
         }
     }
@@ -172,7 +178,7 @@ class Angular extends \yii\base\Widget
     {
         $view = $this->getView();
         $routeProvider = implode("\n", $routeProvider);
-        $js = "{$this->name}.config(['\$routeProvider',function(\$routeProvider){\n{$routeProvider}\n}]);";
+        $js = "{$this->_varName}.config(['\$routeProvider',function(\$routeProvider){\n{$routeProvider}\n}]);";
         $view->registerJs($js, View::POS_END);
     }
 
@@ -194,7 +200,7 @@ class Angular extends \yii\base\Widget
             $di1 = implode("', '", $di);
             $di2 = implode(", ", $di);
             $js = implode("\n", ArrayHelper::getValue($view->js, $name, []));
-            $js = "{$this->name}.controller('$name',['$di1',\nfunction($di2){\n{$js}\n}]);";
+            $js = "{$this->_varName}.controller('$name',['$di1',\nfunction($di2){\n{$js}\n}]);";
             $view->registerJs($js, View::POS_END);
         }
     }
@@ -224,7 +230,7 @@ class Angular extends \yii\base\Widget
             }
 
             $js = <<<JS
-{$this->name}.factory('$name',['\$resource',function(\$resource){
+{$this->_varName}.factory('$name',['\$resource',function(\$resource){
     return \$resource({$url},{$paramDefaults},{$actions});
 }]);
 JS;
