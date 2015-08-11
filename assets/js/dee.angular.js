@@ -1,100 +1,107 @@
 (function () {
-    dee = angular.module('dee.angular', []);
-    dee.directive('dLastRepeat', function () {
-        return {
-            restrict: 'A',
-            scope: {
-                cb: '&dLastRepeat',
-            },
-            link: function (scope, element) {
-                if (scope.$parent.$last) {
-                    setTimeout(function () {
-                        scope.cb(element);
-                    }, 0);
-                }
-            }
-        };
-    });
+    dee = angular.module('dee.angular', ['ngResource']);
 
-    dee.directive('dSortProvider', function () {
-        return {
-            restrict: 'A',
-            scope: {
-                provider: '=dSortProvider',
-                cb: '&sortQuery',
-            },
-            link: function (scope, element, attrs) {
-                if (attrs.sortField) {
-                    element.on('click', function () {
-                        var field = attrs.sortField;
-                        var multisort = scope.provider.multisort;
-                        scope.provider._sortAttrs = scope.provider._sortAttrs || {};
+    dee.directive('dSort', ['$timeout', function ($timeout) {
+            return {
+                restrict: 'AE',
+                require: '?ngModel',
+                link: function (scope, element, attrs, ngModel) {
+                    if (!ngModel)
+                        return;
 
-                        v = scope.provider._sortAttrs[field];
-                        if (multisort) {
-                            if (v === undefined) {
-                                scope.provider._sortAttrs[field] = true;
+                    var multiple = angular.isDefined(attrs.multisort) ? scope.$parent.$eval(attrs.multisort) : false;
+
+                    $timeout(function () {
+                        element.on('click', '[sort-field]', function () {
+                            $(this).removeClass('asc desc');
+                            var sort = ngModel.$modelValue;
+                            var field = $(this).attr('sort-field');
+                            if (multiple) {
+                                if (sort != '' && sort != undefined) {
+                                    sort = sort.split(',');
+                                    var _sort = [];
+                                    var add = 1;
+                                    for (var i in sort) {
+                                        if (sort[i].charAt(0) == '-' && sort[i].substr(1) == field) {
+                                            add = 0;
+                                        } else if (sort[i] == field) {
+                                            add = -1;
+                                        } else {
+                                            _sort.push(sort[i]);
+                                        }
+                                    }
+                                    if (add == 1) {
+                                        _sort.unshift(field);
+                                        $(this).addClass('asc');
+                                    } else if (add == -1) {
+                                        _sort.unshift('-' + field);
+                                        $(this).addClass('desc');
+                                    }
+                                    sort = _sort.join(',');
+                                } else {
+                                    sort = field;
+                                }
                             } else {
-                                delete scope.provider._sortAttrs[field];
-                                if (v) {
-                                    scope.provider._sortAttrs[field] = false;
+                                element.find('[sort-field]').removeClass('asc desc');
+                                if (sort == field) {
+                                    sort = '-' + field;
+                                    $(this).addClass('desc');
+                                } else if (sort == '-' + field) {
+                                    sort = '';
+                                } else {
+                                    sort = field;
+                                    $(this).addClass('desc');
                                 }
                             }
-                        } else {
-                            scope.provider._sortAttrs = {};
-                            if (v === undefined) {
-                                scope.provider._sortAttrs[field] = true;
-                            } else if (v) {
-                                scope.provider._sortAttrs[field] = false;
+                            if(sort == ''){
+                                sort = undefined;
                             }
-                        }
-                        if (Object.keys(scope.provider._sortAttrs).length) {
-                            var sort = [];
-                            $.each(scope.provider._sortAttrs, function (key, val) {
-                                sort.push((val ? '' : '-') + key);
-                            });
-                            scope.provider.sort = sort.reverse().join();
-                        } else {
-                            scope.provider.sort = undefined;
-                        }
-                        // change css class
-                        element.removeClass('asc desc');
-                        if (scope.provider._sortAttrs[field] !== undefined) {
-                            element.addClass(scope.provider._sortAttrs[field] ? 'asc' : 'desc');
-                        }
-
-                        // execute query
-                        query = attrs.sortQuery ? scope.cb : scope.provider.query;
-
-                        if (query) {
-                            query();
-                        }
+                            ngModel.$setViewValue(sort);
+                        });
                     });
                 }
-            }
-        };
-    });
-
-    dee.directive('dErrors', function () {
-        return {
-            restrict: 'A',
-            scope: {
-                errors: '=dErrors',
+            };
+        }]);
+    
+    dee.provider('DRest', function () {
+        var provider = this;
+        
+        this.defaults = {
+            // Default actions configuration
+            actions: {
+                update: {method: 'PUT'},
+                patch: {method: 'PATCH'},
             },
-            link: function (scope, element) {
-                element
-                    .off('keypress.validation', ':input[ng-model]')
-                    .on('keypress.validation', ':input[ng-model]', function () {
-                        if (scope.errors.status) {
-                            delete scope.errors.status;
-                            delete scope.errors.text;
-                        }
-                        var attr = $(this).attr('ng-model').substring(6);
-                        if (scope.errors.data[attr]) {
-                            delete scope.errors.data[attr];
-                        }
-                    });
-            }
+            paramDefaults: {}
         };
+
+        
+        this.$get = ['$resource', function ($resource) {
+
+                function rest(path, paramDefaults, actions, options) {
+                    path = yii.angular.applyApiPath(path);
+                    
+                    switch (yii.angular.authMethod){
+                        case 'query-param':
+                            var qParam = yii.angular.queryParam ? yii.angular.queryParam : 'access-token',param={};
+                            param[qParam] = yii.angular.getToken();
+                            paramDefaults = angular.extend({}, param, provider.defaults.paramDefaults, paramDefaults);
+                            break;
+                        case 'http-bearer':
+                            
+                            break;
+                    }
+
+                    actions = angular.extend({}, provider.defaults.actions, actions);
+                    for(var i in actions){
+                        if(actions[i].url){
+                            actions[i].url = yii.angular.applyApiPath(actions[i].url)
+                        }
+                    }
+                    return $resource(path, paramDefaults, actions, options);
+                }
+
+                return rest;
+            }];
     });
 })();

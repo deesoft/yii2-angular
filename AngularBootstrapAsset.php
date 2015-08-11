@@ -13,13 +13,13 @@ class AngularBootstrapAsset extends \yii\web\AssetBundle
     /**
      * @inheritdoc
      */
-    public $sourcePath = '@dee/angular/assets';
+    public $sourcePath = '@bower/angular-bootstrap';
 
     /**
      * @inheritdoc
      */
     public $js = [
-        'js/ui-bootstrap-tpls-0.12.0.min.js',
+        'ui-bootstrap-tpls.js',
     ];
 
     /**
@@ -38,9 +38,7 @@ class AngularBootstrapAsset extends \yii\web\AssetBundle
         if (class_exists('yii\bootstrap\BootstrapAsset')) {
             array_push($this->depends, 'yii\bootstrap\BootstrapAsset');
         } else {
-            $this->css = [
-                'css/bootstrap.min.css'
-            ];
+            array_push($this->depends, 'dee\angular\BootstrapAsset');
         }
     }
 }

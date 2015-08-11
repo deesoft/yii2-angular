@@ -15,7 +15,11 @@
         }
     ],
     "require": {
-        "yiisoft/yii2": "~2.0.4"
+        "yiisoft/yii2": ">=2.0.4",
+        "bower/angular": "~1.3.0",
+        "bower/angular-route": "~1.3.0",
+        "bower/angular-resource": "~1.3.0",
+        "bower/angular-bootstrap": "~0.13.1"
     },
     "autoload": {
         "psr-4": {

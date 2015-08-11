@@ -74,9 +74,9 @@ class Angular extends \yii\base\Widget
      */
     public static $requireAssets = [
         'ui.bootstrap' => 'dee\angular\AngularBootstrapAsset',
-        'angucomplete' => 'dee\angular\AngucompleteAsset',
-        'validation' => 'dee\angular\AngularValidation',
-        'validation.rule' => 'dee\angular\AngularValidation',
+        'dee.angular' => 'dee\angular\DeeAngularAsset',
+        'ngRoute' => 'dee\angular\AngularRouteAsset',
+        'ngResource' => 'dee\angular\AngularResourceAsset',
     ];
     private $_varName;
 
@@ -126,11 +126,15 @@ class Angular extends \yii\base\Widget
             $routeProvider[] = '$routeProvider.otherwise(' . Json::htmlEncode(['redirectTo' => $this->defaultPath]) . ');';
         }
 
-        $this->renderModule();
-        $this->renderRouteProvider($routeProvider);
-        $this->renderControllers($controllers);
-        $this->renderResources();
+        $js = [];
+        $js[] = "{$this->_varName} = (function(){";
+        $js[] = $this->renderModule();
+        $js[] = $this->renderRouteProvider($routeProvider);
+        $js[] = $this->renderControllers($controllers);
+        $js[] = $this->renderResources();
+        $js[] = "\nreturn {$this->_varName};\n})();";
 
+        $view->registerJs(implode("\n", $js), \yii\web\View::POS_END);
         echo Html::tag($this->tag, '', ['ng-app' => $this->useNgApp ? $this->name : false, 'ng-view' => $this->tag != 'ng-view']);
 
         static::$instance = null;
@@ -155,6 +159,9 @@ class Angular extends \yii\base\Widget
     protected function renderModule()
     {
         $view = $this->getView();
+        if(!empty($this->resources)){
+            $this->requires = array_unique(array_merge($this->requires, ['ngResource']));
+        }
         $requires = array_unique(array_merge(['ngRoute'], $this->requires));
         AngularAsset::register($view);
         foreach ($requires as $module) {
@@ -164,10 +171,11 @@ class Angular extends \yii\base\Widget
             }
         }
         $js = "{$this->_varName} = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");";
-        $view->registerJs($js, View::POS_END);
+        
         if ($this->jsFile !== null) {
-            $this->renderJs($this->jsFile);
+            $js .= "\n" . static::parseBlockJs($view->render($this->jsFile));
         }
+        return $js;
     }
 
     /**
@@ -176,10 +184,8 @@ class Angular extends \yii\base\Widget
      */
     protected function renderRouteProvider($routeProvider)
     {
-        $view = $this->getView();
         $routeProvider = implode("\n", $routeProvider);
-        $js = "{$this->_varName}.config(['\$routeProvider',function(\$routeProvider){\n{$routeProvider}\n}]);";
-        $view->registerJs($js, View::POS_END);
+        return "{$this->_varName}.config(['\$routeProvider',function(\$routeProvider){\n{$routeProvider}\n}]);";
     }
 
     /**
@@ -194,15 +200,16 @@ class Angular extends \yii\base\Widget
      */
     protected function renderControllers($controllers)
     {
+        $js = [];
         $view = $this->getView();
         foreach ($controllers as $name => $di) {
             $di = array_unique(array_merge(['$scope', '$injector'], (array) $di));
             $di1 = implode("', '", $di);
             $di2 = implode(", ", $di);
-            $js = implode("\n", ArrayHelper::getValue($view->js, $name, []));
-            $js = "{$this->_varName}.controller('$name',['$di1',\nfunction($di2){\n{$js}\n}]);";
-            $view->registerJs($js, View::POS_END);
+            $function = implode("\n", ArrayHelper::getValue($view->js, $name, []));
+            $js[] = "{$this->_varName}.controller('$name',['$di1',\nfunction($di2){\n{$function}\n}]);";
         }
+        return implode("\n", $js);
     }
 
     /**
@@ -215,27 +222,31 @@ class Angular extends \yii\base\Widget
      */
     protected function renderResources()
     {
-        $view = $this->getView();
-        foreach ($this->resources as $name => $config) {
-            $url = Json::htmlEncode($config['url']);
-            if (empty($config['paramDefaults'])) {
-                $paramDefaults = '{}';
-            } else {
-                $paramDefaults = Json::htmlEncode($config['paramDefaults']);
-            }
-            if (empty($config['actions'])) {
-                $actions = '{}';
-            } else {
-                $actions = Json::htmlEncode($config['actions']);
-            }
+        if (!empty($this->resources)) {
+            $js = [];
+            foreach ($this->resources as $name => $config) {
+                $url = Json::htmlEncode($config['url']);
+                if (empty($config['paramDefaults'])) {
+                    $paramDefaults = '{}';
+                } else {
+                    $paramDefaults = Json::htmlEncode($config['paramDefaults']);
+                }
+                if (empty($config['actions'])) {
+                    $actions = '{}';
+                } else {
+                    $actions = Json::htmlEncode($config['actions']);
+                }
 
-            $js = <<<JS
+                $js[] = <<<JS
 {$this->_varName}.factory('$name',['\$resource',function(\$resource){
     return \$resource({$url},{$paramDefaults},{$actions});
 }]);
 JS;
-            $view->registerJs($js, View::POS_END);
+                
+            }
+            return implode("\n", $js);
         }
+        return '';
     }
 
     /**

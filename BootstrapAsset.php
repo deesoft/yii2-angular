@@ -8,18 +8,18 @@ namespace dee\angular;
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
-class AngularAsset extends \yii\web\AssetBundle
+class BootstrapAsset extends \yii\web\AssetBundle
 {
     /**
      * @inheritdoc
      */
-    public $sourcePath = '@bower/angular';
+    public $sourcePath = '@dee/angular/assets';
 
     /**
      * @inheritdoc
      */
-    public $js = [
-        'angular.js',
+    public $css = [
+        'css/bootstrap.min.css',
     ];
 
 }

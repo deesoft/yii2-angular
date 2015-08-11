@@ -3,12 +3,12 @@
 namespace dee\angular;
 
 /**
- * AngularRouteAsset
+ * AngularAsset
  *
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
-class AngucompleteAsset extends \yii\web\AssetBundle
+class DeeAngularAsset extends \yii\web\AssetBundle
 {
     /**
      * @inheritdoc
@@ -19,17 +19,16 @@ class AngucompleteAsset extends \yii\web\AssetBundle
      * @inheritdoc
      */
     public $js = [
-        'js/angucomplete.js',
+        'js/yii.angular.js',
+        'js/dee.angular.js',
     ];
-    
-    public $css = [
-        'css/angucomplete.css'
-    ];
-
     /**
      * @inheritdoc
      */
     public $depends = [
+        'yii\web\YiiAsset',
         'dee\angular\AngularAsset',
-    ];    
+        'dee\angular\AngularResourceAsset',
+    ];
+
 }
