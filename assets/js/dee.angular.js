@@ -53,7 +53,7 @@
                                     $(this).addClass('desc');
                                 }
                             }
-                            if(sort == ''){
+                            if (sort == '') {
                                 sort = undefined;
                             }
                             ngModel.$setViewValue(sort);
@@ -62,10 +62,10 @@
                 }
             };
         }]);
-    
+
     dee.provider('DRest', function () {
         var provider = this;
-        
+
         this.defaults = {
             // Default actions configuration
             actions: {
@@ -75,26 +75,15 @@
             paramDefaults: {}
         };
 
-        
+
         this.$get = ['$resource', function ($resource) {
 
                 function rest(path, paramDefaults, actions, options) {
                     path = yii.angular.applyApiPath(path);
-                    
-                    switch (yii.angular.authMethod){
-                        case 'query-param':
-                            var qParam = yii.angular.queryParam ? yii.angular.queryParam : 'access-token',param={};
-                            param[qParam] = yii.angular.getToken();
-                            paramDefaults = angular.extend({}, param, provider.defaults.paramDefaults, paramDefaults);
-                            break;
-                        case 'http-bearer':
-                            
-                            break;
-                    }
 
                     actions = angular.extend({}, provider.defaults.actions, actions);
-                    for(var i in actions){
-                        if(actions[i].url){
+                    for (var i in actions) {
+                        if (actions[i].url) {
                             actions[i].url = yii.angular.applyApiPath(actions[i].url)
                         }
                     }
@@ -104,4 +93,39 @@
                 return rest;
             }];
     });
+
+    dee.config(['$httpProvider', function ($httpProvider) {
+            $httpProvider.interceptors.push('authInterceptor');
+        }
+    ]);
+
+    dee.factory('authInterceptor', ['$q', '$location', function ($q, $location) {
+            return {
+                request: function (config) {
+                    var token = yii.angular.getToken();
+                    switch (yii.angular.authMethod) {
+                        case 'query-param':
+                            if (config.params) {
+                                config.params['access-token'] = token;
+                            } else {
+                                config.params = {'access-token': token};
+                            }
+                            break;
+
+                        case 'http-bearer':
+                            config.headers.Authorization = 'Bearer ' + token;
+                            break;
+
+                        default :
+                    }
+                    return config;
+                },
+                responseError: function (rejection) {
+                    if (rejection.status == 401 && yii.angular.loginUrl != undefined) {
+                        $location.path(yii.angular.loginUrl).replace();
+                    }
+                    return $q.reject(rejection);
+                }
+            };
+        }]);
 })();
