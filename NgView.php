@@ -8,6 +8,7 @@ use yii\helpers\ArrayHelper;
 use yii\base\InvalidConfigException;
 use yii\helpers\Json;
 use yii\helpers\Inflector;
+use yii\web\View as WebView;
 
 /**
  * Description of NgView
@@ -16,7 +17,7 @@ use yii\helpers\Inflector;
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
-class Angular extends \yii\base\Widget
+class NgView extends \yii\base\Widget
 {
     /**
      *
@@ -32,9 +33,9 @@ class Angular extends \yii\base\Widget
 
     /**
      *
-     * @var string
+     * @var string|array
      */
-    public $defaultPath = '/';
+    public $otherwise;
 
     /**
      *
@@ -55,13 +56,13 @@ class Angular extends \yii\base\Widget
     /**
      * @var string
      */
-    public $tag = 'div';
+    public $tag = 'ng-view';
 
     /**
      *
      * @var string
      */
-    public $jsFile;
+    public $js;
 
     /**
      *
@@ -103,41 +104,88 @@ class Angular extends \yii\base\Widget
         $routeProvider = [];
         $controllers = [];
         $view = $this->getView();
-
+        $views = [];
         foreach ($this->routes as $path => $route) {
-            if (!isset($route['view'])) {
-                throw new InvalidConfigException('"view" of route must be set.');
+            if (isset($route['link'])) {
+                $link = Json::htmlEncode($route['link']);
+                unset($route['link'], $route['view'], $route['controller'], $route['show']);
+                $route = Json::htmlEncode($route);
+                $path = Json::htmlEncode($path);
+                $routeProvider[] = "\$routeProvider.when({$path},angular.extend({},{$this->_varName}.views[{$link}],{$route}));";
+            } else {
+                if (!isset($route['view'])) {
+                    throw new InvalidConfigException('"view" of route must be set.');
+                }
+                $viewName = ArrayHelper::remove($route, 'view');
+
+                if (empty($route['controller'])) {
+                    $route['controller'] = Inflector::camelize($viewName) . 'Ctrl';
+                }
+                $this->controller = $route['controller'];
+                if(isset($route['js'])){
+                    $this->renderJs($route['js']);
+                    unset($route['js']);
+                }
+                $route['template'] = $view->render($viewName, ['angular' => $this]);
+
+                $di = ArrayHelper::remove($route, 'di', []);
+                $controllers[$this->controller] = $di;
+                $show = ArrayHelper::remove($route, 'show', true);
+                $views[$path] = $route;
+
+                if ($show) {
+                    $path = Json::htmlEncode($path);
+                    $routeProvider[] = "\$routeProvider.when({$path},{$this->_varName}.views[{$path}]);";
+                }
             }
-            $viewName = ArrayHelper::remove($route, 'view');
-
-            if (empty($route['controller'])) {
-                $route['controller'] = Inflector::camelize($viewName) . 'Ctrl';
-            }
-            $this->controller = $route['controller'];
-            $route['template'] = $view->render($viewName, ['angular' => $this]);
-
-            $di = ArrayHelper::remove($route, 'di', []);
-            $controllers[$this->controller] = $di;
-
-            $routeProvider[] = "\$routeProvider.when('{$path}'," . Json::htmlEncode($route) . ");";
             $this->controller = null;
         }
-        if (isset($this->routes[$this->defaultPath])) {
-            $routeProvider[] = '$routeProvider.otherwise(' . Json::htmlEncode(['redirectTo' => $this->defaultPath]) . ');';
+        
+        if (!empty($this->otherwise)) {
+            $route = is_string($this->otherwise) ? ['redirectTo' => $this->otherwise] : $this->otherwise;
+            if (isset($route['link'])) {
+                $link = Json::htmlEncode($route['link']);
+                unset($route['link'], $route['view'], $route['controller']);
+                $route = Json::htmlEncode($route);
+                $routeProvider[] = "\$routeProvider.otherwise(angular.extend({},{$this->_varName}.views[{$link}],{$route}));";
+            } elseif (isset($route['view'])) {
+                $viewName = ArrayHelper::remove($route, 'view');
+
+                if (empty($route['controller'])) {
+                    $route['controller'] = Inflector::camelize($viewName) . 'Ctrl';
+                }
+                $this->controller = $route['controller'];
+                if(isset($route['js'])){
+                    $this->renderJs($route['js']);
+                    unset($route['js']);
+                }
+                $route['template'] = $view->render($viewName, ['angular' => $this]);
+
+                $di = ArrayHelper::remove($route, 'di', []);
+                $controllers[$this->controller] = $di;
+
+                $views['otherwise'] = $route;
+                $routeProvider[] = "\$routeProvider.otherwise({$this->_varName}.views.otherwise);";
+            } else {
+                $route = Json::htmlEncode($route);
+                $routeProvider[] = "\$routeProvider.otherwise({$route});";
+            }
+            $this->controller = null;
         }
 
         $js = [];
         $js[] = "{$this->_varName} = (function(){";
         $js[] = $this->renderModule();
+        $js[] = $this->renderViews($views);
         $js[] = $this->renderRouteProvider($routeProvider);
         $js[] = $this->renderControllers($controllers);
         $js[] = $this->renderResources();
         $js[] = "\nreturn {$this->_varName};\n})();";
 
-        $view->registerJs(implode("\n", $js), \yii\web\View::POS_END);
-        echo Html::tag($this->tag, '', ['ng-app' => $this->useNgApp ? $this->name : false, 'ng-view' => $this->tag != 'ng-view']);
+        $view->registerJs(implode("\n", $js), WebView::POS_END);
 
         static::$instance = null;
+        return Html::tag($this->tag, '', ['ng-app' => $this->useNgApp ? $this->name : false, 'ng-view' => $this->tag != 'ng-view']);
     }
 
     /**
@@ -159,7 +207,7 @@ class Angular extends \yii\base\Widget
     protected function renderModule()
     {
         $view = $this->getView();
-        if(!empty($this->resources)){
+        if (!empty($this->resources)) {
             $this->requires = array_unique(array_merge($this->requires, ['ngResource']));
         }
         $requires = array_unique(array_merge(['ngRoute'], $this->requires));
@@ -171,11 +219,16 @@ class Angular extends \yii\base\Widget
             }
         }
         $js = "{$this->_varName} = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");";
-        
-        if ($this->jsFile !== null) {
-            $js .= "\n" . static::parseBlockJs($view->render($this->jsFile));
+
+        if ($this->js !== null) {
+            $js .= "\n" . static::parseBlockJs($view->render($this->js));
         }
         return $js;
+    }
+
+    protected function renderViews($views)
+    {
+        return "{$this->_varName}.views = " . Json::htmlEncode($views) . ';';
     }
 
     /**
@@ -242,7 +295,6 @@ class Angular extends \yii\base\Widget
     return \$resource({$url},{$paramDefaults},{$actions});
 }]);
 JS;
-                
             }
             return implode("\n", $js);
         }
@@ -285,25 +337,7 @@ JS;
      */
     public function registerJs($js, $pos = null)
     {
-        $pos = $pos ? : ($this->controller ? : View::POS_END);
+        $pos = $pos ? : ($this->controller ? : WebView::POS_END);
         $this->view->registerJs(static::parseBlockJs($js), $pos);
-    }
-
-    /**
-     * Begin script block
-     */
-    public function beginJs()
-    {
-        ob_start();
-        ob_implicit_flush(false);
-    }
-
-    /**
-     * End script block
-     */
-    public function endJs()
-    {
-        $js = ob_get_clean();
-        $this->registerJs($js);
     }
 }

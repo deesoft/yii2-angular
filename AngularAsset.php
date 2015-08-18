@@ -22,4 +22,10 @@ class AngularAsset extends \yii\web\AssetBundle
         'angular.js',
     ];
 
+    /**
+     * @inheritdoc
+     */
+    public $depends = [
+        'yii\web\JqueryAsset',
+    ];
 }

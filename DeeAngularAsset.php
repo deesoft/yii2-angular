@@ -22,6 +22,7 @@ class DeeAngularAsset extends \yii\web\AssetBundle
         'js/yii.angular.js',
         'js/dee.angular.js',
     ];
+
     /**
      * @inheritdoc
      */
