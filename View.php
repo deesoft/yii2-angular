@@ -16,7 +16,7 @@ class View extends \yii\web\View
     public function registerJs($js, $position = null, $key = null)
     {
         if($position === null){
-            if(Angular::$instance && Angular::$instance->controller){
+            if(NgView::$instance && NgView::$instance->controller){
                 $position = Angular::$instance->controller;
             }  else {
                 $position = self::POS_READY;

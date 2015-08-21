@@ -33,12 +33,6 @@ class NgView extends \yii\base\Widget
 
     /**
      *
-     * @var string|array
-     */
-    public $otherwise;
-
-    /**
-     *
      * @var string
      */
     public $name = 'dApp';
@@ -101,83 +95,33 @@ class NgView extends \yii\base\Widget
      */
     public function run()
     {
-        $routeProvider = [];
+        $routeProviders = [];
         $controllers = [];
         $view = $this->getView();
-        $views = [];
+        $templates = [];
         foreach ($this->routes as $path => $route) {
-            if (isset($route['link'])) {
-                $link = Json::htmlEncode($route['link']);
-                unset($route['link'], $route['view'], $route['controller'], $route['show']);
-                $route = Json::htmlEncode($route);
-                $path = Json::htmlEncode($path);
-                $routeProvider[] = "\$routeProvider.when({$path},angular.extend({},{$this->_varName}.views[{$link}],{$route}));";
-            } else {
-                if (!isset($route['view'])) {
-                    throw new InvalidConfigException('"view" of route must be set.');
-                }
-                $viewName = ArrayHelper::remove($route, 'view');
+            $show = ArrayHelper::remove($route, 'show', true);
+            list($routeProvider, $controller, $template) = $this->applyRoute($route, $path);
 
-                if (empty($route['controller'])) {
-                    $route['controller'] = Inflector::camelize($viewName) . 'Ctrl';
-                }
-                $this->controller = $route['controller'];
-                if(isset($route['js'])){
-                    $this->renderJs($route['js']);
-                    unset($route['js']);
-                }
-                $route['template'] = $view->render($viewName, ['angular' => $this]);
-
-                $di = ArrayHelper::remove($route, 'di', []);
-                $controllers[$this->controller] = $di;
-                $show = ArrayHelper::remove($route, 'show', true);
-                $views[$path] = $route;
-
-                if ($show) {
-                    $path = Json::htmlEncode($path);
-                    $routeProvider[] = "\$routeProvider.when({$path},{$this->_varName}.views[{$path}]);";
-                }
+            if($path == 'otherwise'){
+                $routeProviders[] = "\$routeProvider.otherwise({$routeProvider});";
+            }elseif ($show) {
+                $p = Json::htmlEncode($path);
+                $routeProviders[] = "\$routeProvider.when({$p},{$routeProvider});";
             }
-            $this->controller = null;
-        }
-        
-        if (!empty($this->otherwise)) {
-            $route = is_string($this->otherwise) ? ['redirectTo' => $this->otherwise] : $this->otherwise;
-            if (isset($route['link'])) {
-                $link = Json::htmlEncode($route['link']);
-                unset($route['link'], $route['view'], $route['controller']);
-                $route = Json::htmlEncode($route);
-                $routeProvider[] = "\$routeProvider.otherwise(angular.extend({},{$this->_varName}.views[{$link}],{$route}));";
-            } elseif (isset($route['view'])) {
-                $viewName = ArrayHelper::remove($route, 'view');
-
-                if (empty($route['controller'])) {
-                    $route['controller'] = Inflector::camelize($viewName) . 'Ctrl';
-                }
-                $this->controller = $route['controller'];
-                if(isset($route['js'])){
-                    $this->renderJs($route['js']);
-                    unset($route['js']);
-                }
-                $route['template'] = $view->render($viewName, ['angular' => $this]);
-
-                $di = ArrayHelper::remove($route, 'di', []);
-                $controllers[$this->controller] = $di;
-
-                $views['otherwise'] = $route;
-                $routeProvider[] = "\$routeProvider.otherwise({$this->_varName}.views.otherwise);";
-            } else {
-                $route = Json::htmlEncode($route);
-                $routeProvider[] = "\$routeProvider.otherwise({$route});";
+            if ($controller) {
+                $controllers[$controller[0]] = $controller[1];
             }
-            $this->controller = null;
+            if ($template) {
+                $templates[$path] = $template;
+            }
         }
 
         $js = [];
         $js[] = "{$this->_varName} = (function(){";
         $js[] = $this->renderModule();
-        $js[] = $this->renderViews($views);
-        $js[] = $this->renderRouteProvider($routeProvider);
+        $js[] = $this->renderTemplates($templates);
+        $js[] = $this->renderRouteProviders($routeProviders);
         $js[] = $this->renderControllers($controllers);
         $js[] = $this->renderResources();
         $js[] = "\nreturn {$this->_varName};\n})();";
@@ -186,6 +130,44 @@ class NgView extends \yii\base\Widget
 
         static::$instance = null;
         return Html::tag($this->tag, '', ['ng-app' => $this->useNgApp ? $this->name : false, 'ng-view' => $this->tag != 'ng-view']);
+    }
+
+    protected function applyRoute($route, $path)
+    {
+        $view = $this->getView();
+        $routeProvider = $controller = $template = null;
+
+        if (is_string($route)) {
+            $routeProvider = Json::htmlEncode(['redirectTo' => $route]);
+        } elseif (isset($route['link'])) {
+            $link = Json::htmlEncode($route['link']);
+            unset($route['link'], $route['view'], $route['controller'], $route['show']);
+            $route = Json::htmlEncode($route);
+            $routeProvider = "angular.extend({},{$this->_varName}.templates[{$link}],{$route})";
+        } else {
+            $injection = ArrayHelper::remove($route, 'injection', []);
+
+            if (empty($route['controller'])) {
+                $route['controller'] = Inflector::camelize(ArrayHelper::getValue($route, 'view', $path)) . 'Ctrl';
+            }
+            $this->controller = $route['controller'];
+            $controller = [$this->controller, $injection];
+
+            if (isset($route['js'])) {
+                $this->renderJs($route['js']);
+                unset($route['js']);
+            }
+            if (isset($route['view'])) {
+                $route['template'] = $view->render($route['view'], ['widget' => $this]);
+                unset($route['view']);
+            }
+            $template = $route;
+
+            $path = Json::htmlEncode($path);
+            $routeProvider = "{$this->_varName}.templates[{$path}]";
+        }
+        $this->controller = null;
+        return [$routeProvider, $controller, $template];
     }
 
     /**
@@ -226,19 +208,19 @@ class NgView extends \yii\base\Widget
         return $js;
     }
 
-    protected function renderViews($views)
+    protected function renderTemplates($templates)
     {
-        return "{$this->_varName}.views = " . Json::htmlEncode($views) . ';';
+        return "{$this->_varName}.templates = " . Json::htmlEncode($templates) . ';';
     }
 
     /**
      * Render script config for $routeProvider
-     * @param array $routeProvider
+     * @param array $routeProviders
      */
-    protected function renderRouteProvider($routeProvider)
+    protected function renderRouteProviders($routeProviders)
     {
-        $routeProvider = implode("\n", $routeProvider);
-        return "{$this->_varName}.config(['\$routeProvider',function(\$routeProvider){\n{$routeProvider}\n}]);";
+        $routeProviders = implode("\n", $routeProviders);
+        return "{$this->_varName}.config(['\$routeProvider',function(\$routeProvider){\n{$routeProviders}\n}]);";
     }
 
     /**
@@ -255,12 +237,12 @@ class NgView extends \yii\base\Widget
     {
         $js = [];
         $view = $this->getView();
-        foreach ($controllers as $name => $di) {
-            $di = array_unique(array_merge(['$scope', '$injector'], (array) $di));
-            $di1 = implode("', '", $di);
-            $di2 = implode(", ", $di);
+        foreach ($controllers as $name => $injection) {
+            $injection = array_unique(array_merge(['$scope', '$injector'], (array) $injection));
+            $injectionStr = rtrim(Json::htmlEncode($injection),']');
+            $injectionVar = implode(", ", $injection);
             $function = implode("\n", ArrayHelper::getValue($view->js, $name, []));
-            $js[] = "{$this->_varName}.controller('$name',['$di1',\nfunction($di2){\n{$function}\n}]);";
+            $js[] = "{$this->_varName}.controller('$name',{$injectionStr},\nfunction($injectionVar){\n{$function}\n}]);";
         }
         return implode("\n", $js);
     }
@@ -324,7 +306,7 @@ JS;
      */
     public function renderJs($viewFile, $params = [], $pos = null)
     {
-        $params['angular'] = $this;
+        $params['widget'] = $this;
         $js = $this->view->render($viewFile, $params);
         $this->registerJs($js, $pos);
     }
