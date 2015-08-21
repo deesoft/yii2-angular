@@ -28,21 +28,22 @@ Usage
 In view file
 ```php
 <?php
-use dee\angular\Angular;
+use dee\angular\NgView;
 
 /* @var $this yii\web\View */
 ?>
 
-<?= Angular::widget([
+<?= NgView::widget([
     'name' => 'myapp', // default dApp
     'routes'=>[
         '/'=>[
-            'view'=>'index',
-            'controller'=>'IndexCtrl', // optional
+            'view' => 'index',
+            'js' => 'index.js',
         ],
         '/view/:id'=>[
-            'view'=>'view', // if controller empty, controller will be as ViewCtrl
-            'di'=>['$location', '$routeParams'], // $scope and $injector are always be added              
+            'view'=>'view', 
+            'js'=>'view.js',
+            'injection'=>['$location', '$routeParams'], // $scope and $injector are always be added              
         ],
         '/edit/:id'=>[
             'view'=>'edit',
@@ -53,14 +54,15 @@ use dee\angular\Angular;
     ]
 ])?>
 ```
+
 Then `index.php`
 ```php
 <?php
 
-use dee\angular\Angular;
+use dee\angular\NgView;
 
 /* @var $this yii\web\View */
-/* @var $angular Angular */
+/* @var $widget NgView */
 ?>
 
 <ul>
@@ -68,17 +70,23 @@ use dee\angular\Angular;
         <a ng-href="/view/{{item.id}}">{{item.name}}</a>
     </li>
 </ul>
+```
 
-<?php Angular::beginScript() ?>
-// this script will be inserted to IndexCtrl
+`index.js`
+```javascript
 Rest = $injector.get('Rest');
-$scope.items = Rest.all();
-$scope.deleteItem = function (id) {
-    Rest.remove(id);
-    $scope.items = Rest.all();
-}
-<?php Angular::endScript(); ?>
 
+query = function(){
+    Rest.query({},function(r){
+        $scope.items = r;
+    });
+}
+
+$scope.deleteItem = function (id) {
+    Rest.remove({id:id},{},function(){
+        query();
+    });
+}
 ```
 
 Use GII to generate crud
