@@ -67,6 +67,11 @@ class NgView extends \yii\base\Widget
     /**
      * @var array
      */
+    public $clientOptions;
+
+    /**
+     * @var array
+     */
     public static $requireAssets = [
         'ui.bootstrap' => 'dee\angular\AngularBootstrapAsset',
         'dee.angular' => 'dee\angular\DeeAngularAsset',
@@ -100,12 +105,12 @@ class NgView extends \yii\base\Widget
         $view = $this->getView();
         $templates = [];
         foreach ($this->routes as $path => $route) {
-            $show = ArrayHelper::remove($route, 'show', true);
+            $visible = ArrayHelper::remove($route, 'visible', true);
             list($routeProvider, $controller, $template) = $this->applyRoute($route, $path);
 
-            if($path == 'otherwise'){
+            if($path === 'otherwise'){
                 $routeProviders[] = "\$routeProvider.otherwise({$routeProvider});";
-            }elseif ($show) {
+            }elseif ($visible) {
                 $p = Json::htmlEncode($path);
                 $routeProviders[] = "\$routeProvider.when({$p},{$routeProvider});";
             }
@@ -118,13 +123,15 @@ class NgView extends \yii\base\Widget
         }
 
         $js = [];
-        $js[] = "{$this->_varName} = (function(){";
+        $js[] = "{$this->_varName} = (function(options){";
         $js[] = $this->renderModule();
         $js[] = $this->renderTemplates($templates);
         $js[] = $this->renderRouteProviders($routeProviders);
         $js[] = $this->renderControllers($controllers);
         $js[] = $this->renderResources();
-        $js[] = "\nreturn {$this->_varName};\n})();";
+
+        $options = empty($this->clientOptions)?'{}':  Json::htmlEncode($this->clientOptions);
+        $js[] = "\nreturn {$this->_varName};\n})({$options});";
 
         $view->registerJs(implode("\n", $js), WebView::POS_END);
 
@@ -141,14 +148,14 @@ class NgView extends \yii\base\Widget
             $routeProvider = Json::htmlEncode(['redirectTo' => $route]);
         } elseif (isset($route['link'])) {
             $link = Json::htmlEncode($route['link']);
-            unset($route['link'], $route['view'], $route['controller'], $route['show']);
+            unset($route['link'], $route['view'], $route['controller'], $route['visible']);
             $route = Json::htmlEncode($route);
             $routeProvider = "angular.extend({},{$this->_varName}.templates[{$link}],{$route})";
         } else {
             $injection = ArrayHelper::remove($route, 'injection', []);
 
             if (empty($route['controller'])) {
-                $route['controller'] = Inflector::camelize(ArrayHelper::getValue($route, 'view', $path)) . 'Ctrl';
+                $route['controller'] = Inflector::camelize($path) . 'Ctrl';
             }
             $this->controller = $route['controller'];
             $controller = [$this->controller, $injection];
