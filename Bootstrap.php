@@ -4,7 +4,7 @@ namespace dee\angular;
 
 use Yii;
 use yii\web\Application;
-use yii\web\Request;
+use yii\base\BootstrapInterface;
 
 /**
  * Description of Bootstrap
@@ -12,7 +12,7 @@ use yii\web\Request;
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
-class Bootstrap implements \yii\base\BootstrapInterface
+class Bootstrap implements BootstrapInterface
 {
 
     /**
@@ -22,17 +22,6 @@ class Bootstrap implements \yii\base\BootstrapInterface
     {
         if ($app instanceof Application) {
             Yii::$container->set('yii\web\View', 'dee\angular\View');
-            $request = $app->has('request', true) ? $app->get('request') : $app->components['request'];
-            if ($request instanceof Request) {
-                if (!isset($request->parsers['application/json']) && !isset($request->parsers['*'])) {
-                    $request->parsers['application/json'] = 'yii\web\JsonParser';
-                }
-            } elseif (is_array($request)) {
-                if (!isset($request['parsers']['application/json']) && !isset($request['parsers']['*'])) {
-                    $request['parsers']['application/json'] = 'yii\web\JsonParser';
-                    $app->set('request', $request);
-                }
-            }
         }
     }
 }
