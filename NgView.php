@@ -5,10 +5,10 @@ namespace dee\angular;
 use Yii;
 use yii\helpers\Html;
 use yii\helpers\ArrayHelper;
-use yii\base\InvalidConfigException;
 use yii\helpers\Json;
 use yii\helpers\Inflector;
 use yii\web\View as WebView;
+use yii\base\Widget;
 
 /**
  * Description of NgView
@@ -17,7 +17,7 @@ use yii\web\View as WebView;
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
-class NgView extends \yii\base\Widget
+class NgView extends Widget
 {
     /**
      *
@@ -77,6 +77,9 @@ class NgView extends \yii\base\Widget
         'dee.angular' => 'dee\angular\DeeAngularAsset',
         'ngRoute' => 'dee\angular\AngularRouteAsset',
         'ngResource' => 'dee\angular\AngularResourceAsset',
+        'ngAnimate' => 'dee\angular\AngularAnimateAsset',
+        'ngAria' => 'dee\angular\AngularAnimateAsset',
+        'ngTouch' => 'dee\angular\AngularAnimateAsset',
     ];
     private $_varName;
 
@@ -131,7 +134,7 @@ class NgView extends \yii\base\Widget
         $js[] = $this->renderResources();
 
         $options = empty($this->clientOptions)?'{}':  Json::htmlEncode($this->clientOptions);
-        $js[] = "\nreturn {$this->_varName};\n})({$options});";
+        $js[] = "\nreturn module;\n})({$options});";
 
         $view->registerJs(implode("\n", $js), WebView::POS_END);
 
@@ -150,7 +153,7 @@ class NgView extends \yii\base\Widget
             $link = Json::htmlEncode($route['link']);
             unset($route['link'], $route['view'], $route['controller'], $route['visible']);
             $route = Json::htmlEncode($route);
-            $routeProvider = "angular.extend({},{$this->_varName}.templates[{$link}],{$route})";
+            $routeProvider = "angular.extend({},module.templates[{$link}],{$route})";
         } else {
             $injection = ArrayHelper::remove($route, 'injection', []);
 
@@ -171,7 +174,7 @@ class NgView extends \yii\base\Widget
             $template = $route;
 
             $path = Json::htmlEncode($path);
-            $routeProvider = "{$this->_varName}.templates[{$path}]";
+            $routeProvider = "module.templates[{$path}]";
         }
         $this->controller = null;
         return [$routeProvider, $controller, $template];
@@ -190,7 +193,7 @@ class NgView extends \yii\base\Widget
     /**
      * Render script create module. The result are
      * ```javascript
-     * appName = angular.module('appName',[requires,...]);
+     * module = angular.module('appName',[requires,...]);
      * ```
      */
     protected function renderModule()
@@ -207,7 +210,8 @@ class NgView extends \yii\base\Widget
                 $class::register($view);
             }
         }
-        $js = "{$this->_varName} = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");";
+        $js = "var module = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");\n"
+            . "var {$this->_varName} = module;";
 
         if ($this->js !== null) {
             $js .= "\n" . static::parseBlockJs($view->render($this->js));
@@ -217,7 +221,7 @@ class NgView extends \yii\base\Widget
 
     protected function renderTemplates($templates)
     {
-        return "{$this->_varName}.templates = " . Json::htmlEncode($templates) . ';';
+        return "module.templates = " . Json::htmlEncode($templates) . ';';
     }
 
     /**
@@ -227,13 +231,13 @@ class NgView extends \yii\base\Widget
     protected function renderRouteProviders($routeProviders)
     {
         $routeProviders = implode("\n", $routeProviders);
-        return "{$this->_varName}.config(['\$routeProvider',function(\$routeProvider){\n{$routeProviders}\n}]);";
+        return "module.config(['\$routeProvider',function(\$routeProvider){\n{$routeProviders}\n}]);";
     }
 
     /**
      * Render script create controllers
      * ```javascript
-     * appName.controller('CtrlName',['$scope',...,
+     * module.controller('CtrlName',['$scope',...,
      *     function($scope,...){
      *         ...
      *     }]);
@@ -249,7 +253,7 @@ class NgView extends \yii\base\Widget
             $injectionStr = rtrim(Json::htmlEncode($injection),']');
             $injectionVar = implode(", ", $injection);
             $function = implode("\n", ArrayHelper::getValue($view->js, $name, []));
-            $js[] = "{$this->_varName}.controller('$name',{$injectionStr},\nfunction($injectionVar){\n{$function}\n}]);";
+            $js[] = "module.controller('$name',{$injectionStr},\nfunction($injectionVar){\n{$function}\n}]);";
         }
         return implode("\n", $js);
     }
@@ -257,7 +261,7 @@ class NgView extends \yii\base\Widget
     /**
      * Render script resource
      * ```javascript
-     * appName.factory(ResName,['$resource',function($resource){
+     * module.factory(ResName,['$resource',function($resource){
      *     return ...;
      * }]);
      * ```
@@ -280,7 +284,7 @@ class NgView extends \yii\base\Widget
                 }
 
                 $js[] = <<<JS
-{$this->_varName}.factory('$name',['\$resource',function(\$resource){
+module.factory('$name',['\$resource',function(\$resource){
     return \$resource({$url},{$paramDefaults},{$actions});
 }]);
 JS;
