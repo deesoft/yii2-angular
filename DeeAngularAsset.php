@@ -19,15 +19,16 @@ class DeeAngularAsset extends \yii\web\AssetBundle
      * @inheritdoc
      */
     public $js = [
-        'js/yii.angular.js',
-        'js/dee.angular.js',
+        'js/dee-angular-rest.js',
+        'js/dee-angular-ui.js',
+        'js/dee-angular.js',
     ];
 
     /**
      * @inheritdoc
      */
     public $depends = [
-        'yii\web\YiiAsset',
+        'yii\web\JqueryAsset',
         'dee\angular\AngularAsset',
         'dee\angular\AngularResourceAsset',
     ];

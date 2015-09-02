@@ -3,7 +3,7 @@
 namespace dee\angular;
 
 /**
- * AngularAsset
+ * BootstrapAsset
  *
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0

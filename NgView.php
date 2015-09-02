@@ -74,12 +74,14 @@ class NgView extends Widget
      */
     public static $requireAssets = [
         'ui.bootstrap' => 'dee\angular\AngularBootstrapAsset',
-        'dee.angular' => 'dee\angular\DeeAngularAsset',
+        'dee' => 'dee\angular\DeeAngularAsset',
         'ngRoute' => 'dee\angular\AngularRouteAsset',
         'ngResource' => 'dee\angular\AngularResourceAsset',
         'ngAnimate' => 'dee\angular\AngularAnimateAsset',
         'ngAria' => 'dee\angular\AngularAnimateAsset',
         'ngTouch' => 'dee\angular\AngularAnimateAsset',
+        'validation' => 'dee\angular\AngularValidationAsset',
+        'validation.rule'=>'dee\angular\AngularValidationAsset'
     ];
     private $_varName;
 

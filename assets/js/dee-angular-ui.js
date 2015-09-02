@@ -1,7 +1,7 @@
 (function () {
-    dee = angular.module('dee.angular', ['ngResource']);
+    var module = angular.module('dee.ui', []);
 
-    dee.directive('dSort', ['$timeout', function ($timeout) {
+    module.directive('dSort', ['$timeout', function ($timeout) {
             return {
                 restrict: 'AE',
                 require: '?ngModel',
@@ -59,72 +59,6 @@
                             ngModel.$setViewValue(sort);
                         });
                     });
-                }
-            };
-        }]);
-
-    dee.provider('DRest', function () {
-        var provider = this;
-
-        this.defaults = {
-            // Default actions configuration
-            actions: {
-                update: {method: 'PUT'},
-                patch: {method: 'PATCH'},
-            },
-            paramDefaults: {}
-        };
-
-
-        this.$get = ['$resource', function ($resource) {
-
-                function rest(path, paramDefaults, actions, options) {
-                    path = yii.angular.applyApiPath(path);
-
-                    actions = angular.extend({}, provider.defaults.actions, actions);
-                    for (var i in actions) {
-                        if (actions[i].url) {
-                            actions[i].url = yii.angular.applyApiPath(actions[i].url)
-                        }
-                    }
-                    return $resource(path, paramDefaults, actions, options);
-                }
-
-                return rest;
-            }];
-    });
-
-    dee.config(['$httpProvider', function ($httpProvider) {
-            $httpProvider.interceptors.push('authInterceptor');
-        }
-    ]);
-
-    dee.factory('authInterceptor', ['$q', '$location', function ($q, $location) {
-            return {
-                request: function (config) {
-                    var token = yii.angular.getToken();
-                    switch (yii.angular.authMethod) {
-                        case 'query-param':
-                            if (config.params) {
-                                config.params['access-token'] = token;
-                            } else {
-                                config.params = {'access-token': token};
-                            }
-                            break;
-
-                        case 'http-bearer':
-                            config.headers.Authorization = 'Bearer ' + token;
-                            break;
-
-                        default :
-                    }
-                    return config;
-                },
-                responseError: function (rejection) {
-                    if (rejection.status == 401 && yii.angular.loginUrl != undefined) {
-                        $location.path(yii.angular.loginUrl).replace();
-                    }
-                    return $q.reject(rejection);
                 }
             };
         }]);
