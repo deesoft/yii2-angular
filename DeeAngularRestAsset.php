@@ -8,7 +8,7 @@ namespace dee\angular;
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
  * @since 1.0
  */
-class DeeAngularAsset extends \yii\web\AssetBundle
+class DeeAngularRestAsset extends \yii\web\AssetBundle
 {
     /**
      * @inheritdoc
@@ -20,16 +20,12 @@ class DeeAngularAsset extends \yii\web\AssetBundle
      */
     public $js = [
         'js/dee-angular-rest.js',
-        'js/dee-angular-ui.js',
-        'js/dee-angular.js',
     ];
 
     /**
      * @inheritdoc
      */
     public $depends = [
-        'yii\web\JqueryAsset',
-        'dee\angular\AngularAsset',
         'dee\angular\AngularResourceAsset',
     ];
 

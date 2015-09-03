@@ -74,14 +74,15 @@ class NgView extends Widget
      */
     public static $requireAssets = [
         'ui.bootstrap' => 'dee\angular\AngularBootstrapAsset',
-        'dee' => 'dee\angular\DeeAngularAsset',
+        'dee.ui' => 'dee\angular\DeeAngularUiAsset',
+        'dee.rest' => 'dee\angular\DeeAngularRestAsset',
         'ngRoute' => 'dee\angular\AngularRouteAsset',
         'ngResource' => 'dee\angular\AngularResourceAsset',
         'ngAnimate' => 'dee\angular\AngularAnimateAsset',
         'ngAria' => 'dee\angular\AngularAnimateAsset',
         'ngTouch' => 'dee\angular\AngularAnimateAsset',
         'validation' => 'dee\angular\AngularValidationAsset',
-        'validation.rule'=>'dee\angular\AngularValidationAsset'
+        'validation.rule' => 'dee\angular\AngularValidationAsset',
     ];
     private $_varName;
 
@@ -113,9 +114,9 @@ class NgView extends Widget
             $visible = ArrayHelper::remove($route, 'visible', true);
             list($routeProvider, $controller, $template) = $this->applyRoute($route, $path);
 
-            if($path === 'otherwise'){
+            if ($path === 'otherwise') {
                 $routeProviders[] = "\$routeProvider.otherwise({$routeProvider});";
-            }elseif ($visible) {
+            } elseif ($visible) {
                 $p = Json::htmlEncode($path);
                 $routeProviders[] = "\$routeProvider.when({$p},{$routeProvider});";
             }
@@ -134,8 +135,13 @@ class NgView extends Widget
         $js[] = $this->renderRouteProviders($routeProviders);
         $js[] = $this->renderControllers($controllers);
         $js[] = $this->renderResources();
+        if ($this->js !== null) {
+            foreach ((array)$this->js as $file) {
+                $js[] = "\n" . static::parseBlockJs($view->render($file));
+            }
+        }
 
-        $options = empty($this->clientOptions)?'{}':  Json::htmlEncode($this->clientOptions);
+        $options = empty($this->clientOptions) ? '{}' : Json::htmlEncode($this->clientOptions);
         $js[] = "\nreturn module;\n})({$options});";
 
         $view->registerJs(implode("\n", $js), WebView::POS_END);
@@ -214,10 +220,6 @@ class NgView extends Widget
         }
         $js = "var module = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");\n"
             . "var {$this->_varName} = module;";
-
-        if ($this->js !== null) {
-            $js .= "\n" . static::parseBlockJs($view->render($this->js));
-        }
         return $js;
     }
 
@@ -252,7 +254,7 @@ class NgView extends Widget
         $view = $this->getView();
         foreach ($controllers as $name => $injection) {
             $injection = array_unique(array_merge(['$scope', '$injector'], (array) $injection));
-            $injectionStr = rtrim(Json::htmlEncode($injection),']');
+            $injectionStr = rtrim(Json::htmlEncode($injection), ']');
             $injectionVar = implode(", ", $injection);
             $function = implode("\n", ArrayHelper::getValue($view->js, $name, []));
             $js[] = "module.controller('$name',{$injectionStr},\nfunction($injectionVar){\n{$function}\n}]);";
