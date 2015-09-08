@@ -9,6 +9,8 @@ use yii\helpers\Json;
 use yii\helpers\Inflector;
 use yii\web\View as WebView;
 use yii\base\Widget;
+use yii\helpers\Url;
+use yii\web\AssetBundle;
 
 /**
  * Description of NgView
@@ -70,6 +72,21 @@ class NgView extends Widget
     public $clientOptions;
 
     /**
+     * @var array 
+     */
+    public $injection = ['$scope', '$injector'];
+
+    /**
+     * @var boolean
+     */
+    public $remote;
+
+    /**
+     * @var string 
+     */
+    public $queryParam = '_ng-view';
+
+    /**
      * @var array
      */
     public static $requireAssets = [
@@ -99,6 +116,12 @@ class NgView extends Widget
     {
         static::$instance = $this;
         $this->_varName = Inflector::variablize($this->name);
+
+        $this->requires[] = 'ngRoute';
+        if (!empty($this->resources)) {
+            $this->requires[] = 'ngResource';
+        }
+        $this->requires = array_unique($this->requires);
     }
 
     /**
@@ -106,9 +129,50 @@ class NgView extends Widget
      */
     public function run()
     {
+        $view = $this->getView();
+        if (!$this->remote || Yii::$app->getRequest()->get($this->queryParam) === 'script') {
+            $js = $this->generate();
+            if ($this->remote) {
+                $response = Yii::$app->getResponse();
+                $response->format = 'raw';
+                $response->getHeaders()->set('Content-Type', 'application/javascript');
+                $response->content = $js;
+                $response->send();
+                Yii::$app->end();
+            } else {
+                $view->registerJs($js, WebView::POS_END);
+            }
+        }
+        // Asset Dependency
+        $key = md5(Yii::$app->controller->route . $this->name);
+        $bundle = [
+            'baseUrl' => '',
+            'depends' => [AngularAsset::className()],
+            'js' => [],
+        ];
+        foreach ($this->requires as $module) {
+            if (isset(static::$requireAssets[$module])) {
+                $bundle['depends'][] = static::$requireAssets[$module];
+            }
+        }
+        if ($this->remote) {
+            $key = md5(Yii::$app->controller->route . $this->name);
+            $url = Url::current([$this->queryParam => 'script']);
+            $bundle['js'][] = strncmp($url, '//', 2) === 0 ? $url : ltrim($url, '/');
+        }
+        Yii::$app->getAssetManager()->bundles[$key] = new AssetBundle($bundle);
+        $view->registerAssetBundle($key);
+
+        static::$instance = null;
+        return Html::tag($this->tag, '', ['ng-app' => $this->useNgApp ? $this->name : false, 'ng-view' => $this->tag != 'ng-view']);
+    }
+
+    protected function generate()
+    {
+        $view = $this->getView();
+
         $routeProviders = [];
         $controllers = [];
-        $view = $this->getView();
         $templates = [];
         foreach ($this->routes as $path => $route) {
             $visible = ArrayHelper::remove($route, 'visible', true);
@@ -136,7 +200,7 @@ class NgView extends Widget
         $js[] = $this->renderControllers($controllers);
         $js[] = $this->renderResources();
         if ($this->js !== null) {
-            foreach ((array)$this->js as $file) {
+            foreach ((array) $this->js as $file) {
                 $js[] = "\n" . static::parseBlockJs($view->render($file));
             }
         }
@@ -144,10 +208,8 @@ class NgView extends Widget
         $options = empty($this->clientOptions) ? '{}' : Json::htmlEncode($this->clientOptions);
         $js[] = "\nreturn module;\n})({$options});";
 
-        $view->registerJs(implode("\n", $js), WebView::POS_END);
 
-        static::$instance = null;
-        return Html::tag($this->tag, '', ['ng-app' => $this->useNgApp ? $this->name : false, 'ng-view' => $this->tag != 'ng-view']);
+        return implode("\n", $js);
     }
 
     protected function applyRoute($route, $path)
@@ -189,16 +251,6 @@ class NgView extends Widget
     }
 
     /**
-     * Use to add required module to application
-     *
-     * @param sting|array $requires
-     */
-    public function requires($requires)
-    {
-        $this->requires = array_unique(array_merge($this->requires, (array) $requires));
-    }
-
-    /**
      * Render script create module. The result are
      * ```javascript
      * module = angular.module('appName',[requires,...]);
@@ -206,19 +258,7 @@ class NgView extends Widget
      */
     protected function renderModule()
     {
-        $view = $this->getView();
-        if (!empty($this->resources)) {
-            $this->requires = array_unique(array_merge($this->requires, ['ngResource']));
-        }
-        $requires = array_unique(array_merge(['ngRoute'], $this->requires));
-        AngularAsset::register($view);
-        foreach ($requires as $module) {
-            if (isset(static::$requireAssets[$module])) {
-                $class = static::$requireAssets[$module];
-                $class::register($view);
-            }
-        }
-        $js = "var module = angular.module('{$this->name}'," . Json::htmlEncode($requires) . ");\n"
+        $js = "var module = angular.module('{$this->name}'," . Json::htmlEncode($this->requires) . ");\n"
             . "var {$this->_varName} = module;";
         return $js;
     }
@@ -253,7 +293,7 @@ class NgView extends Widget
         $js = [];
         $view = $this->getView();
         foreach ($controllers as $name => $injection) {
-            $injection = array_unique(array_merge(['$scope', '$injector'], (array) $injection));
+            $injection = array_unique(array_merge($this->injection, (array) $injection));
             $injectionStr = rtrim(Json::htmlEncode($injection), ']');
             $injectionVar = implode(", ", $injection);
             $function = implode("\n", ArrayHelper::getValue($view->js, $name, []));
