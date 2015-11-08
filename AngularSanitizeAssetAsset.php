@@ -3,12 +3,11 @@
 namespace dee\angular;
 
 /**
- * AngularAriaAsset
+ * AngularSanitizeAsset
  *
  * @author VitProg <vitprog@gmail.com>
- * @since 1.1
  */
-class AngularSanitize extends \yii\web\AssetBundle
+class AngularSanitizeAsset extends \yii\web\AssetBundle
 {
     /**
      * @inheritdoc
