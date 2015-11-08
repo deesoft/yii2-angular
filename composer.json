@@ -1,16 +1,16 @@
 {
-    "name": "deesoft/yii2-angular",
+    "name": "vitprog/yii2-angular",
     "description": "Yii2 angular extension",
     "keywords": ["yii2", "angularjs"],
     "type": "yii2-extension",
     "license": "BSD-3-Clause",
     "support": {
-        "issues": "https://github.com/deesoft/yii2-angular/issues",
-        "source": "https://github.com/deesoft/yii2-angular"
+        "issues": "https://github.com/vitprog/yii2-angular/issues",
+        "source": "https://github.com/vitprog/yii2-angular"
     },
     "authors": [
         {
-            "name": "Misbahul Munir",
+            "name": "Misbahul Munir + VitProg",
             "email": "misbahuldmunir@gmail.com"
         }
     ],
